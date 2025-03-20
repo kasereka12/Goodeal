@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Fonction pour vérifier si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Fonction pour vérifier si l'utilisateur est le propriétaire
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Fonction pour vérifier si le fichier est une image valide
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 5 * 1024 * 1024; // 5MB max
+    }
+
+    // Images des annonces
+    match /listings/{userId}/{imageId} {
+      allow read: if true;
+      allow create: if isOwner(userId) 
+                   && isValidImage()
+                   && request.resource.contentType.matches('image/(jpeg|png|gif)');
+      allow delete: if isOwner(userId);
+    }
+
+    // Photos de profil
+    match /profile_photos/{userId}/{imageId} {
+      allow read: if true;
+      allow create: if isOwner(userId)
+                   && isValidImage()
+                   && request.resource.contentType.matches('image/(jpeg|png|gif)');
+      allow delete: if isOwner(userId);
+    }
+  }
+}
