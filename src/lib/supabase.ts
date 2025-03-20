@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export async function testSupabaseConnection() {
   try {
     const { data, error } = await supabase
-      .from('cities')
+      .from('test')
       .select('*')
       .limit(1);
 

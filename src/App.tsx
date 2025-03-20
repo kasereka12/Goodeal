@@ -18,7 +18,7 @@ import AdminUsers from './pages/admin/Users';
 import AdminListings from './pages/admin/Listings';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
-import Test from './Test';
+import testFetchSignup from './Test';
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -40,9 +40,46 @@ function ScrollToTop() {
 function App() {
 
   return (
-    <div className="App">
-      <Test />
-    </div>
+    <Router>
+      <LanguageProvider>
+        <AuthProvider>
+          <ScrollToTop />
+          <Routes>
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="listings" element={<AdminListings />} />
+            </Route>
+
+            {/* Public routes */}
+            <Route
+              path="*"
+              element={
+                <div className="min-h-screen bg-page-background flex flex-col">
+                  <Navbar />
+                  <main className="container mx-auto px-4 py-8 flex-grow">
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/create-listing" element={<CreateListing />} />
+                      <Route path="/listings/:id" element={<ListingDetails />} />
+                      <Route path="/category/:category" element={<CategoryListings />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/requests" element={<Requests />} />
+                      <Route path="/create-request" element={<CreateRequest />} />
+                      <Route path="/filters" element={<Filters />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </LanguageProvider>
+    </Router>
   );
 }
 

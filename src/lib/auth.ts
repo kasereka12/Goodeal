@@ -8,16 +8,18 @@ export async function signUp(email: string, password: string) {
     if (password.length < 6) throw new Error('Password must be at least 6 characters long');
 
     // Attempt signup with increased timeout and retries
-    console.log("🔍 Tentative d'inscription avec :", { email, password });
     const { data, error } = await supabase.auth.signUp(
       {
         email,
         password,
-
-      },
-
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+          data: {
+            email_confirm_required: false
+          }
+        }
+      }
     );
-    console.log("📡 Réponse Supabase :", { data, error });
 
     if (error) {
       // Handle specific error cases
@@ -69,7 +71,7 @@ export async function signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    });
+    },);
 
     if (error) {
       // Handle specific error cases

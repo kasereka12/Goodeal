@@ -55,13 +55,12 @@ export default function Auth() {
         await signIn(data.email, data.password);
       }
     } catch (err: any) {
-      console.error('Auth error:', err);  // Affichage plus détaillé de l'erreur dans la console
-      setError(err.message);  // Vous pourriez également vouloir afficher plus de détails sur l'erreur
+      console.error('Auth error:', err);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   // If user is already logged in, don't render the form
   if (user) {
