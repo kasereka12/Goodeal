@@ -16,7 +16,7 @@ BEGIN
   -- Get admin user ID
   SELECT id INTO admin_id
   FROM auth.users
-  WHERE email = 'contact@myfirst-property.com'
+  WHERE email = 'dmutaka7@gmail.com'
   LIMIT 1;
 
   -- Only insert data if we have an admin user

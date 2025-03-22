@@ -139,6 +139,11 @@ BEGIN
   END IF;
 
   -- Insert sample data using the admin ID
+
+Do $$
+  declare
+   admin_id := select id from auth.users where email = 'dmutaka7@gmail.com';
+ begin
   -- Electronics
   INSERT INTO listings (
     title, description, price, category, subcategory, city, region, images, filters, user_id

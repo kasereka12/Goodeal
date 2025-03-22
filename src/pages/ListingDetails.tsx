@@ -75,7 +75,7 @@ function ShareMenu({ url, title, onClose }: { url: string; title: string; onClos
 
   const handleShare = async (e: React.MouseEvent, option: typeof shareOptions[0]) => {
     e.preventDefault();
-    
+
     // Essayer d'utiliser l'API de partage native si disponible
     if (canShare()) {
       try {
@@ -130,10 +130,13 @@ function ShareMenu({ url, title, onClose }: { url: string; title: string; onClos
 // Composant pour les informations du vendeur
 function SellerInfo({ user_data }: { user_data: ListingDetails['user_data'] }) {
   const displayName = user_data.user_metadata?.display_name || user_data.email.split('@')[0];
+
+  const id = user_data?.id;
   const memberSince = new Date(user_data.created_at).toLocaleDateString('fr-FR', {
     month: 'long',
     year: 'numeric'
   });
+  console.log(id);
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -151,7 +154,7 @@ function SellerInfo({ user_data }: { user_data: ListingDetails['user_data'] }) {
             </span>
           </div>
         )}
-        
+
         <div>
           <h3 className="font-semibold text-lg">{displayName}</h3>
           <p className="text-sm text-gray-500">
@@ -161,10 +164,11 @@ function SellerInfo({ user_data }: { user_data: ListingDetails['user_data'] }) {
       </div>
 
       <div className="mt-6 space-y-3">
-        <button className="btn btn-primary w-full">
+        <Link to={`/chat/${user_data.id}`} className="btn btn-primary w-full flex items-center justify-center">
           <MessageSquare className="mr-2 h-4 w-4" />
           Contacter le vendeur
-        </button>
+        </Link>
+
         <button className="btn btn-secondary w-full">
           Voir le profil
         </button>
@@ -281,11 +285,10 @@ function ListingDetails() {
             {/* Badge pour le type de transaction */}
             {listing.transaction_type && (
               <div className="mt-2">
-                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
-                  listing.transaction_type === 'location' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-green-500 text-white'
-                }`}>
+                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-green-500 text-white'
+                  }`}>
                   {listing.transaction_type === 'location' ? 'Location' : 'Vente'}
                 </span>
               </div>
@@ -299,9 +302,8 @@ function ListingDetails() {
           <div className="flex gap-4 lg:hidden">
             <button
               onClick={toggleFavorite}
-              className={`btn flex-1 ${
-                isFavorite ? 'btn-primary' : 'btn-secondary'
-              }`}
+              className={`btn flex-1 ${isFavorite ? 'btn-primary' : 'btn-secondary'
+                }`}
             >
               <Heart
                 className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`}
@@ -338,7 +340,7 @@ function ListingDetails() {
                 {Object.entries(listing.filters).map(([key, value]) => {
                   // Skip transaction_type as it's displayed elsewhere
                   if (key === 'transaction_type') return null;
-                  
+
                   return (
                     <div key={key}>
                       <dt className="text-sm text-gray-500 capitalize">
@@ -381,15 +383,14 @@ function ListingDetails() {
                 </span>
               )}
             </p>
-            
+
             {/* Badge pour le type de transaction */}
             {listing.transaction_type && (
               <div className="mt-2">
-                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
-                  listing.transaction_type === 'location' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-green-500 text-white'
-                }`}>
+                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-green-500 text-white'
+                  }`}>
                   {listing.transaction_type === 'location' ? 'Location' : 'Vente'}
                 </span>
               </div>
@@ -409,9 +410,8 @@ function ListingDetails() {
             <div className="flex gap-4 mt-6">
               <button
                 onClick={toggleFavorite}
-                className={`btn flex-1 ${
-                  isFavorite ? 'btn-primary' : 'btn-secondary'
-                }`}
+                className={`btn flex-1 ${isFavorite ? 'btn-primary' : 'btn-secondary'
+                  }`}
               >
                 <Heart
                   className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`}

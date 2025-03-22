@@ -12,11 +12,11 @@ export default function AdminLayout() {
   const isAdmin = user?.user_metadata?.role === 'admin';
 
   // Redirect non-authenticated users to login
-  /* useEffect(() => {
-     /* if (!user) {
-        navigate('/auth');
-      }
-}, [user, navigate]);
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
 
   // Show 404 for non-admin authenticated users
   if (user && !isAdmin) {
@@ -24,14 +24,14 @@ export default function AdminLayout() {
   }
 
   // Show loading state while checking authentication
-  /* if (!user) {
-     return (
-       <div className="flex h-screen items-center justify-center bg-gray-100">
-         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-       </div>
-     );
-   }
-  */
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}

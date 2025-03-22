@@ -18,7 +18,9 @@ import AdminUsers from './pages/admin/Users';
 import AdminListings from './pages/admin/Listings';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
-import testFetchSignup from './Test';
+import ChatInterface from './pages/Chat';
+import ChatList from './pages/Chat';
+import Chatperso from './pages/Chatperso';
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -61,6 +63,9 @@ function App() {
                   <main className="container mx-auto px-4 py-8 flex-grow">
                     <Routes>
                       <Route path="/" element={<Home />} />
+
+                      <Route path="/chat" element={<ChatList />} />
+                      <Route path="/chat/:userId" element={<Chatperso />} />
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/create-listing" element={<CreateListing />} />
                       <Route path="/listings/:id" element={<ListingDetails />} />

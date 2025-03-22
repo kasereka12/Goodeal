@@ -17,12 +17,12 @@ export default function Users() {
   const [selectedStatus, setSelectedStatus] = useState('all');
 
   // Check if user is admin
-  /*
+
   React.useEffect(() => {
     if (!user?.user_metadata?.role === 'admin') {
       navigate('/');
     }
-  }, [user, navigate]);*/
+  }, [user, navigate]);
 
   // Filter users based on search and filters
   const filteredUsers = MOCK_USERS.filter(user => {

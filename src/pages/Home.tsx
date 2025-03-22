@@ -39,12 +39,12 @@ function ListingCarousel({ title, listings, category, isLoading = false }: Listi
 
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
-    
+
     const scrollAmount = 300;
-    const newScrollLeft = direction === 'left' 
+    const newScrollLeft = direction === 'left'
       ? scrollRef.current.scrollLeft - scrollAmount
       : scrollRef.current.scrollLeft + scrollAmount;
-    
+
     scrollRef.current.scrollTo({
       left: newScrollLeft,
       behavior: 'smooth'
@@ -53,10 +53,10 @@ function ListingCarousel({ title, listings, category, isLoading = false }: Listi
 
   const checkScrollButtons = () => {
     if (!scrollRef.current) return;
-    
+
     setShowLeftArrow(scrollRef.current.scrollLeft > 0);
     setShowRightArrow(
-      scrollRef.current.scrollLeft < 
+      scrollRef.current.scrollLeft <
       scrollRef.current.scrollWidth - scrollRef.current.clientWidth
     );
   };
@@ -93,7 +93,7 @@ function ListingCarousel({ title, listings, category, isLoading = false }: Listi
             </Link>
           )}
         </div>
-        
+
         <div className="relative group">
           {showLeftArrow && (
             <button
@@ -148,11 +148,10 @@ function ListingCarousel({ title, listings, category, isLoading = false }: Listi
                         className="w-full h-full object-cover"
                       />
                       {listing.transaction_type && (
-                        <div className={`absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-medium ${
-                          listing.transaction_type === 'location' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-green-500 text-white'
-                        }`}>
+                        <div className={`absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-green-500 text-white'
+                          }`}>
                           {listing.transaction_type === 'location' ? 'Location' : 'Vente'}
                         </div>
                       )}
@@ -285,9 +284,9 @@ function Home() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        searchResultsRef.current && 
+        searchResultsRef.current &&
         !searchResultsRef.current.contains(event.target as Node) &&
-        searchInputRef.current && 
+        searchInputRef.current &&
         !searchInputRef.current.contains(event.target as Node)
       ) {
         setIsSearchFocused(false);
@@ -359,7 +358,7 @@ function Home() {
 
       {/* Search results dropdown */}
       {isSearchFocused && searchContainerRef.current && (
-        <div 
+        <div
           ref={searchResultsRef}
           className="fixed left-0 right-0 mx-auto max-w-3xl px-4 z-[100]"
           style={{
@@ -412,19 +411,19 @@ function Home() {
 
       {/* Carousel sections */}
       <div className="bg-page-background">
-        <ListingCarousel 
-          title={t('home.sections.latestListings')} 
+        <ListingCarousel
+          title={t('home.sections.latestListings')}
           listings={latestListings}
           isLoading={isLoading}
         />
-        
-        <ListingCarousel 
-          title={t('home.sections.realEstate')} 
+
+        <ListingCarousel
+          title={t('home.sections.realEstate')}
           listings={categoryListings.immobilier || []}
           category="immobilier"
           isLoading={isLoading}
         />
-        
+
         {/* Urbain Five ad section */}
         <section className="py-4 sm:py-8">
           <div className="container mx-auto px-4">
@@ -437,7 +436,7 @@ function Home() {
               />
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
-              
+
               {/* Content */}
               <div className="relative h-full flex flex-col justify-center px-4 sm:px-8 md:px-12">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white max-w-2xl">
@@ -460,22 +459,22 @@ function Home() {
           </div>
         </section>
 
-        <ListingCarousel 
-          title={t('home.sections.vehicles')} 
+        <ListingCarousel
+          title={t('home.sections.vehicles')}
           listings={categoryListings.vehicules || []}
           category="vehicules"
           isLoading={isLoading}
         />
-        
-        <ListingCarousel 
-          title={t('home.sections.services')} 
+
+        <ListingCarousel
+          title={t('home.sections.services')}
           listings={categoryListings.services || []}
           category="services"
           isLoading={isLoading}
         />
-        
-        <ListingCarousel 
-          title={t('home.sections.crafts')} 
+
+        <ListingCarousel
+          title={t('home.sections.crafts')}
           listings={categoryListings.artisanat || []}
           category="artisanat"
           isLoading={isLoading}
