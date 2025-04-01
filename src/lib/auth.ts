@@ -1,87 +1,93 @@
 import { supabase } from './supabase';
 
-export async function signUp(email: string, password: string) {
-  try {
-    // Validate inputs
-    if (!email) throw new Error('Email is required');
-    if (!password) throw new Error('Password is required');
-    if (password.length < 6) throw new Error('Password must be at least 6 characters long');
+// Types pour plus de clarté
+type AccountType = 'Particulier' | 'Professionnel' | string | null;
+type SignUpParams = {
+  email: string;
+  password: string;
+  username: string;
+  accountType?: AccountType;
+  phone?: string | null;
+  whatsapp?: string | null;
+  isSeller?: boolean;
+};
 
-    // Attempt signup with increased timeout and retries
-    const { data, error } = await supabase.auth.signUp(
-      {
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
-          data: {
-            email_confirm_required: false
-          }
-        }
+export async function signUp(email: string, password: string, username: string, accountType: 'Particulier' | 'Professionnel' | null, phone: string | null, whatsapp: string | null, isSeller: boolean) {
+  try {
+    console.log('Starting signUp with:', { email, username, isSeller });
+
+    if (!email || !password || !username) {
+      const missing = [];
+      if (!email) missing.push('email');
+      if (!password) missing.push('password');
+      if (!username) missing.push('username');
+      throw new Error(`Missing fields: ${missing.join(', ')}`);
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          account_type: isSeller ? accountType : null,
+          phone: isSeller ? phone : null,
+          whatsapp: isSeller ? whatsapp : null,
+          is_seller: isSeller
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback`
       }
-    );
+    });
+
+    console.log('Supabase response:', { data, error });
 
     if (error) {
-      // Handle specific error cases
-      if (error.message?.includes('User already registered')) {
-        throw new Error('This email is already registered. Please sign in instead.');
-      }
-      if (error.message?.includes('Password should be')) {
-        throw new Error('Password must be at least 6 characters long.');
-      }
-      if (error.message?.includes('Invalid email')) {
-        throw new Error('Please enter a valid email address.');
-      }
-      // Throw the original error if no specific case matches
+      console.error('Supabase error details:', {
+        message: error.message,
+        code: error.code,
+        status: error.status
+      });
       throw error;
     }
 
     if (!data.user) {
-      throw new Error('No user data returned from signup');
+      throw new Error('No user returned from signup');
     }
 
     return data.user;
   } catch (error: any) {
-    // Log the full error for debugging
-    console.error('Signup error:', {
+    console.error('Full signup error:', {
       message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-      status: error.status,
-      statusText: error.statusText
+      stack: error.stack,
+      name: error.name,
+      originalError: error.originalError
     });
-
-    // Handle timeout error specifically
-    if (error.status === 504 || error.message?.includes('timeout')) {
-      throw new Error('The signup request timed out. Please try again.');
-    }
-
-    // Throw a user-friendly error message
-    throw new Error(error.message || 'An error occurred during signup. Please try again.');
+    throw new Error(error.message || 'Signup failed. Please try again.');
   }
 }
-
 export async function signIn(email: string, password: string) {
   try {
-    // Validate inputs
-    if (!email) throw new Error('Email is required');
-    if (!password) throw new Error('Password is required');
+    // Validation simple
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password,
-    },);
+      password
+    });
 
     if (error) {
-      // Handle specific error cases
-      if (error.message?.includes('Invalid login credentials')) {
-        throw new Error('Invalid email or password. Please try again.');
+      console.error('Supabase signin error:', error);
+
+      // Gestion des erreurs spécifiques
+      if (error.message.includes('Invalid login credentials')) {
+        throw new Error('Invalid email or password');
       }
-      if (error.message?.includes('Email not confirmed')) {
-        throw new Error('Please verify your email before signing in.');
+      if (error.message.includes('Email not confirmed')) {
+        throw new Error('Please verify your email first');
       }
-      // Throw the original error if no specific case matches
+
       throw error;
     }
 
@@ -91,18 +97,12 @@ export async function signIn(email: string, password: string) {
 
     return data.user;
   } catch (error: any) {
-    // Log the full error for debugging
-    console.error('Login error:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code
-    });
-
-    // Throw a user-friendly error message
-    throw new Error(error.message || 'An error occurred during login. Please try again.');
+    console.error('Signin error:', error);
+    throw new Error(error.message || 'Failed to sign in');
   }
 }
+
+// ... (les autres fonctions restent similaires)
 
 export async function signOut() {
   try {
@@ -132,3 +132,5 @@ export async function updateUserProfile(displayName?: string, phoneNumber?: stri
     throw new Error(error.message || 'An error occurred while updating your profile. Please try again.');
   }
 }
+
+

@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ImageGallery from '../components/ImageGallery';
 
-// Interface pour les détails d'une annonce
 interface ListingDetails {
   id: string;
   title: string;
@@ -32,7 +31,11 @@ interface ListingDetails {
   created_at: string;
 }
 
-// Menu de partage
+interface SellerInfoProps {
+  user_data: ListingDetails['user_data'];
+  listingId: string;
+}
+
 function ShareMenu({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
 
@@ -46,7 +49,6 @@ function ShareMenu({ url, title, onClose }: { url: string; title: string; onClos
     }
   };
 
-  // Vérifier si l'API de partage est disponible
   const canShare = () => {
     try {
       return navigator.share && navigator.canShare({ url, title });
@@ -76,27 +78,17 @@ function ShareMenu({ url, title, onClose }: { url: string; title: string; onClos
   const handleShare = async (e: React.MouseEvent, option: typeof shareOptions[0]) => {
     e.preventDefault();
 
-    // Essayer d'utiliser l'API de partage native si disponible
     if (canShare()) {
       try {
-        await navigator.share({
-          title,
-          url,
-        });
+        await navigator.share({ title, url });
         onClose();
         return;
       } catch (error) {
-        // Si l'utilisateur annule ou si une erreur se produit, continuer avec le lien de partage
         console.log('Fallback to share link');
       }
     }
 
-    // Ouvrir dans une nouvelle fenêtre
-    window.open(
-      option.url,
-      'share-dialog',
-      'width=600,height=400,location=no,menubar=no,toolbar=no'
-    );
+    window.open(option.url, 'share-dialog', 'width=600,height=400,location=no,menubar=no,toolbar=no');
   };
 
   return (
@@ -127,16 +119,12 @@ function ShareMenu({ url, title, onClose }: { url: string; title: string; onClos
   );
 }
 
-// Composant pour les informations du vendeur
-function SellerInfo({ user_data }: { user_data: ListingDetails['user_data'] }) {
+function SellerInfo({ user_data, listingId }: SellerInfoProps) {
   const displayName = user_data.user_metadata?.display_name || user_data.email.split('@')[0];
-
-  const id = user_data?.id;
   const memberSince = new Date(user_data.created_at).toLocaleDateString('fr-FR', {
     month: 'long',
     year: 'numeric'
   });
-  console.log(id);
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -164,14 +152,21 @@ function SellerInfo({ user_data }: { user_data: ListingDetails['user_data'] }) {
       </div>
 
       <div className="mt-6 space-y-3">
-        <Link to={`/chat/${user_data.id}`} className="btn btn-primary w-full flex items-center justify-center">
+        <Link
+          to={`/chat/${user_data.id}?listingId=${listingId}`}
+          className="btn btn-primary w-full flex items-center justify-center"
+        >
           <MessageSquare className="mr-2 h-4 w-4" />
           Contacter le vendeur
         </Link>
 
-        <button className="btn btn-secondary w-full">
+        <Link
+          to={`/profile/${user_data.id}`}
+          state={{ username: user_data.user_metadata?.display_name || user_data.email.split('@')[0] }}
+          className="btn btn-secondary w-full flex items-center justify-center"
+        >
           Voir le profil
-        </button>
+        </Link>
       </div>
     </div>
   );
@@ -187,7 +182,6 @@ function ListingDetails() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
 
-  // Fetch listing details
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -205,7 +199,6 @@ function ListingDetails() {
 
         setListing(data);
 
-        // Increment view count
         const { error: updateError } = await supabase
           .from('listings')
           .update({ views: (data.views || 0) + 1 })
@@ -232,7 +225,6 @@ function ListingDetails() {
 
     try {
       setIsFavorite(!isFavorite);
-      // TODO: Implémenter la logique de sauvegarde dans la base de données
     } catch (error) {
       console.error('Erreur lors de la gestion des favoris:', error);
       setIsFavorite(isFavorite);
@@ -269,9 +261,7 @@ function ListingDetails() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Colonne principale */}
         <div className="lg:col-span-2 space-y-6">
-          {/* En-tête mobile */}
           <div className="lg:hidden">
             <h1 className="text-2xl font-bold">{listing.title}</h1>
             <p className="text-3xl font-bold text-primary mt-2">
@@ -282,12 +272,9 @@ function ListingDetails() {
                 </span>
               )}
             </p>
-            {/* Badge pour le type de transaction */}
             {listing.transaction_type && (
               <div className="mt-2">
-                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-green-500 text-white'
+                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
                   }`}>
                   {listing.transaction_type === 'location' ? 'Location' : 'Vente'}
                 </span>
@@ -295,19 +282,14 @@ function ListingDetails() {
             )}
           </div>
 
-          {/* Galerie d'images */}
           <ImageGallery images={listing.images} />
 
-          {/* Actions mobiles */}
           <div className="flex gap-4 lg:hidden">
             <button
               onClick={toggleFavorite}
-              className={`btn flex-1 ${isFavorite ? 'btn-primary' : 'btn-secondary'
-                }`}
+              className={`btn flex-1 ${isFavorite ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <Heart
-                className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`}
-              />
+              <Heart className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
               {isFavorite ? 'Sauvegardé' : 'Sauvegarder'}
             </button>
             <div className="relative">
@@ -324,7 +306,6 @@ function ListingDetails() {
             </div>
           </div>
 
-          {/* Description */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">Description</h2>
             <p className="text-gray-600 whitespace-pre-line">
@@ -332,35 +313,26 @@ function ListingDetails() {
             </p>
           </div>
 
-          {/* Caractéristiques */}
           {Object.keys(listing.filters).length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold mb-4">Caractéristiques</h2>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                {Object.entries(listing.filters).map(([key, value]) => {
-                  // Skip transaction_type as it's displayed elsewhere
-                  if (key === 'transaction_type') return null;
-
-                  return (
+                {Object.entries(listing.filters)
+                  .filter(([key]) => key !== 'transaction_type')
+                  .map(([key, value]) => (
                     <div key={key}>
                       <dt className="text-sm text-gray-500 capitalize">
                         {key.replace('_', ' ')}
                       </dt>
                       <dd className="text-gray-900 mt-1">
-                        {typeof value === 'boolean'
-                          ? value
-                            ? 'Oui'
-                            : 'Non'
-                          : value}
+                        {typeof value === 'boolean' ? value ? 'Oui' : 'Non' : value}
                       </dd>
                     </div>
-                  );
-                })}
+                  ))}
               </dl>
             </div>
           )}
 
-          {/* Localisation */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">Localisation</h2>
             <div className="flex items-center gap-2 text-gray-600">
@@ -370,9 +342,7 @@ function ListingDetails() {
           </div>
         </div>
 
-        {/* Colonne latérale */}
         <div className="space-y-6">
-          {/* En-tête desktop */}
           <div className="hidden lg:block bg-white rounded-lg shadow-sm p-6">
             <h1 className="text-2xl font-bold">{listing.title}</h1>
             <p className="text-3xl font-bold text-primary mt-2">
@@ -384,12 +354,9 @@ function ListingDetails() {
               )}
             </p>
 
-            {/* Badge pour le type de transaction */}
             {listing.transaction_type && (
               <div className="mt-2">
-                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-green-500 text-white'
+                <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${listing.transaction_type === 'location' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
                   }`}>
                   {listing.transaction_type === 'location' ? 'Location' : 'Vente'}
                 </span>
@@ -410,12 +377,9 @@ function ListingDetails() {
             <div className="flex gap-4 mt-6">
               <button
                 onClick={toggleFavorite}
-                className={`btn flex-1 ${isFavorite ? 'btn-primary' : 'btn-secondary'
-                  }`}
+                className={`btn flex-1 ${isFavorite ? 'btn-primary' : 'btn-secondary'}`}
               >
-                <Heart
-                  className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`}
-                />
+                <Heart className={`mr-2 h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
                 {isFavorite ? 'Sauvegardé' : 'Sauvegarder'}
               </button>
               <div className="relative">
@@ -433,10 +397,8 @@ function ListingDetails() {
             </div>
           </div>
 
-          {/* Informations vendeur */}
-          <SellerInfo user_data={listing.user_data} />
+          <SellerInfo user_data={listing.user_data} listingId={listing.id} />
 
-          {/* Sécurité */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">Conseils de sécurité</h2>
             <ul className="text-sm text-gray-600 space-y-2">

@@ -8,6 +8,8 @@ import CreateListing from './pages/CreateListing';
 import ListingDetails from './pages/ListingDetails';
 import CategoryListings from './pages/CategoryListings';
 import Profile from './pages/Profile';
+import SellerProfile from './pages/SellerProfile';
+import Settings from './pages/Settings';
 import Requests from './pages/Requests';
 import CreateRequest from './pages/CreateRequest';
 import Filters from './pages/Filters';
@@ -21,6 +23,8 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import ChatInterface from './pages/Chat';
 import ChatList from './pages/Chat';
 import Chatperso from './pages/Chatperso';
+import { ThemeProvider } from './contexts/ThemeContext';
+import FavoritesPage from './pages/Favoris';
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -64,16 +68,33 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Home />} />
 
-                      <Route path="/chat" element={<ChatList />} />
-                      <Route path="/chat/:userId" element={<Chatperso />} />
+
+                      <Route path="/chat">
+                        <Route index element={<ChatList />} />
+                        <Route
+                          path=":userId"
+                          element={<Chatperso />}
+                          // Ajoutez cette prop pour passer les query params
+                          loader={({ params, request }) => {
+                            const url = new URL(request.url);
+                            const listingId = url.searchParams.get("listingId");
+                            return { listingId };
+                          }}
+                        />
+                      </Route>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/create-listing" element={<CreateListing />} />
                       <Route path="/listings/:id" element={<ListingDetails />} />
                       <Route path="/category/:category" element={<CategoryListings />} />
                       <Route path="/profile" element={<Profile />} />
+
+                      <Route path="/favorites" element={<FavoritesPage />} />
+                      <Route path="/profile/:id" element={<SellerProfile />} />
                       <Route path="/requests" element={<Requests />} />
                       <Route path="/create-request" element={<CreateRequest />} />
                       <Route path="/filters" element={<Filters />} />
+
+                      <Route path="/settings" element={<Settings />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>

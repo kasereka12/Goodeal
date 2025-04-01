@@ -76,6 +76,39 @@ export const translations = {
       notifications: 'Notifications',
       settings: 'Paramètres'
     },
+    settings: {
+      title: 'Paramètres',
+      account: 'Compte',
+      notifications: 'Notifications',
+      security: 'Sécurité',
+      appearance: 'Apparence',
+      deleteAccount: 'Supprimer le compte',
+      confirmDelete: 'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
+      deleting: 'Suppression en cours...',
+      deleteError: 'Erreur lors de la suppression',
+      email: 'Adresse email',
+      language: 'Langue',
+      signOut: 'Déconnexion',
+      emailNotifications: 'Notifications par email',
+      emailNotificationsDesc: 'Recevoir des notifications par email',
+      pushNotifications: 'Notifications push',
+      pushNotificationsDesc: 'Recevoir des notifications sur l\'appareil',
+      changePassword: 'Changer le mot de passe',
+      sendResetLink: 'Envoyer un lien de réinitialisation',
+      resetEmailSent: 'Email de réinitialisation envoyé',
+      resetError: 'Erreur lors de l\'envoi',
+      sessions: 'Sessions actives',
+      sessionsDesc: 'Gérez les appareils connectés à votre compte',
+      viewSessions: 'Voir les sessions',
+      darkMode: 'Mode sombre',
+      darkModeDesc: 'Activer l\'interface sombre',
+      saveChanges: 'Enregistrer les modifications',
+      saving: 'Enregistrement...',
+      saveSuccess: 'Préférences enregistrées',
+      saveError: 'Erreur lors de l\'enregistrement',
+      loadError: 'Erreur de chargement'
+    }
+    ,
     listings: {
       create: 'Créer une annonce',
       edit: 'Modifier l\'annonce',
@@ -289,6 +322,8 @@ export const translations = {
         expired: 'Expired'
       }
     },
+    // Ajoutez cette section dans vos traductions existantes
+
     categories: {
       realEstate: 'Real Estate',
       vehicles: 'Cars & Vehicles',
@@ -316,6 +351,19 @@ export const translations = {
         rent: 'Rent'
       }
     },
+    favorites: {
+      title: "Vos favoris",
+      subtitle: "Vous avez {count} annonce(s) en favori(s)",
+      emptyTitle: "Aucun favori pour le moment",
+      emptyDescription: "Les annonces que vous aimez apparaîtront ici.",
+      browseListings: "Parcourir les annonces",
+      remove: "Retirer des favoris",
+      fetchError: "Erreur lors du chargement des favoris",
+      removeError: "Erreur lors de la suppression",
+      authRequired: "Connectez-vous pour voir vos favoris",
+      authDescription: "Vous devez être connecté pour accéder à vos annonces favorites."
+
+    },
     profile: {
       title: 'My profile',
       displayName: 'Display name',
@@ -329,6 +377,37 @@ export const translations = {
         fileType: 'Accepted formats: JPG, PNG or GIF',
         uploadFailed: 'Upload failed. Please try again.'
       }
+    }, settings: {
+      title: 'Settings',
+      account: 'Account',
+      notifications: 'Notifications',
+      security: 'Security',
+      appearance: 'Appearance',
+      deleteAccount: 'Delete Account',
+      confirmDelete: 'Are you sure you want to delete your account? This action cannot be undone.',
+      deleting: 'Deleting...',
+      deleteError: 'Error deleting account',
+      email: 'Email address',
+      language: 'Language',
+      signOut: 'Sign Out',
+      emailNotifications: 'Email Notifications',
+      emailNotificationsDesc: 'Receive email notifications',
+      pushNotifications: 'Push Notifications',
+      pushNotificationsDesc: 'Receive device notifications',
+      changePassword: 'Change Password',
+      sendResetLink: 'Send Reset Link',
+      resetEmailSent: 'Reset email sent',
+      resetError: 'Error sending reset email',
+      sessions: 'Active Sessions',
+      sessionsDesc: 'Manage devices connected to your account',
+      viewSessions: 'View Sessions',
+      darkMode: 'Dark Mode',
+      darkModeDesc: 'Enable dark interface',
+      saveChanges: 'Save Changes',
+      saving: 'Saving...',
+      saveSuccess: 'Preferences saved',
+      saveError: 'Error saving preferences',
+      loadError: 'Loading error'
     },
     footer: {
       description: 'Goodeaal is the premier classifieds platform in Morocco. Find or sell whatever you want, wherever you are.',
@@ -347,6 +426,7 @@ export const translations = {
         legal: 'Legal notice',
         admin: 'Admin'
       }
+
     }
   }
 } as const;
