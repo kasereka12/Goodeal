@@ -2,23 +2,13 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  Search,
-  User,
-  Shield,
-  Ban,
-  Loader2,
-  Check,
-  X,
-  Phone,
-  ChevronUp,
-  ChevronDown,
-  AlertCircle,
-  Plus
+  Search, User, Shield, Ban, Loader2, Check, X, Phone,
+  ChevronUp, ChevronDown, AlertCircle, Plus, Mail, Key
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-interface User {
+interface UserProfile {
   user_id: string;
   email: string;
   username: string;
@@ -27,7 +17,6 @@ interface User {
   status: 'active' | 'banned';
   is_seller: boolean;
   seller_approved: boolean;
-  seller_status: 'approved' | 'pending' | 'none';
   created_at: Date;
   banned_until?: Date;
   last_sign_in_at?: Date;
@@ -37,10 +26,10 @@ const UserManagement = () => {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // États
-  const [users, setUsers] = useState<User[]>([]);
+  // States
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<{ message: string; details?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     role: 'all',
@@ -48,7 +37,7 @@ const UserManagement = () => {
     sellerStatus: 'all'
   });
   const [sortConfig, setSortConfig] = useState({
-    key: 'created_at',
+    key: 'created_at' as keyof UserProfile,
     direction: 'desc' as 'asc' | 'desc'
   });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -60,9 +49,8 @@ const UserManagement = () => {
     role: 'authenticated' as 'admin' | 'authenticated',
     is_seller: false
   });
-  const [addingUser, setAddingUser] = useState(false);
 
-  // Vérification des permissions admin
+  // Check admin permissions
   useEffect(() => {
     if (currentUser?.user_metadata?.role !== 'admin') {
       navigate('/unauthorized', { replace: true });
@@ -71,7 +59,7 @@ const UserManagement = () => {
     }
   }, [currentUser, navigate]);
 
-  // Récupération des utilisateurs
+  // Fetch users
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -86,31 +74,23 @@ const UserManagement = () => {
         created_at: new Date(user.created_at),
         banned_until: user.banned_until ? new Date(user.banned_until) : undefined,
         last_sign_in_at: user.last_sign_in_at ? new Date(user.last_sign_in_at) : undefined,
-        status: user.banned_until && new Date(user.banned_until) > new Date() ? 'banned' : 'active',
-        seller_status: user.is_seller
-          ? (user.seller_approved ? 'approved' : 'pending')
-          : 'none'
+        status: user.banned_until && new Date(user.banned_until) > new Date() ? 'banned' : 'active'
       }));
 
       setUsers(formattedUsers);
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError({
-        message: 'Failed to load users',
-        details: err instanceof Error ? err.message : undefined
-      });
+      setError('Failed to load users. Please try again.');
       toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Création d'un utilisateur
+  // Create new user
   const createUser = useCallback(async () => {
     try {
-      setAddingUser(true);
-
-      // 1. Créer l'utilisateur d'authentification
+      // 1. Create auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUser.email,
         password: newUser.password,
@@ -123,14 +103,14 @@ const UserManagement = () => {
 
       if (authError) throw authError;
 
-      // 2. Mettre à jour le profil
+      // 2. Update profile
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           username: newUser.username,
           phone: newUser.phone,
           is_seller: newUser.is_seller,
-          seller_approved: newUser.is_seller, // Auto-approve si admin crée
+          seller_approved: newUser.is_seller,
           show_phone: !!newUser.phone
         })
         .eq('user_id', authData.user.id);
@@ -148,21 +128,17 @@ const UserManagement = () => {
         is_seller: false
       });
 
-      // 3. Rafraîchir la liste
+      // 3. Refresh list
       await fetchUsers();
     } catch (err) {
       console.error('Error creating user:', err);
       toast.error(`Failed to create user: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setAddingUser(false);
     }
   }, [newUser, fetchUsers]);
 
-  // Mise à jour du statut utilisateur
+  // Update user status
   const updateUserStatus = useCallback(async (action: 'ban' | 'role' | 'seller', userId: string, value: any) => {
     try {
-      if (!userId) throw new Error('Invalid user ID');
-
       let error;
 
       switch (action) {
@@ -184,13 +160,11 @@ const UserManagement = () => {
             p_is_approved: value
           }));
           break;
-        default:
-          throw new Error('Invalid action');
       }
 
       if (error) throw error;
 
-      // Mise à jour optimiste
+      // Optimistic update
       setUsers(prev => prev.map(user => {
         if (user.user_id === userId) {
           return {
@@ -201,7 +175,6 @@ const UserManagement = () => {
             }),
             ...(action === 'role' && { role: value }),
             ...(action === 'seller' && {
-              seller_status: value ? 'approved' : 'pending',
               seller_approved: value
             })
           };
@@ -209,23 +182,23 @@ const UserManagement = () => {
         return user;
       }));
 
-      toast.success(`User ${action} updated successfully`);
+      toast.success(`User updated successfully`);
     } catch (err) {
-      console.error(`Error updating ${action}:`, err);
+      console.error(`Error updating user:`, err);
       toast.error(`Failed to update user: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      await fetchUsers();
+      fetchUsers();
     }
   }, [fetchUsers]);
 
-  // Tri des utilisateurs
-  const requestSort = useCallback((key: keyof User) => {
+  // Sorting
+  const requestSort = useCallback((key: keyof UserProfile) => {
     setSortConfig(prev => ({
       key,
       direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
     }));
   }, []);
 
-  // Filtrage et tri
+  // Filter and sort users
   const filteredAndSortedUsers = useMemo(() => {
     const filtered = users.filter(user => {
       const matchesSearch =
@@ -241,8 +214,8 @@ const UserManagement = () => {
       const matchesSellerStatus =
         filters.sellerStatus === 'all' ||
         (filters.sellerStatus === 'seller' && user.is_seller) ||
-        (filters.sellerStatus === 'approved' && user.seller_status === 'approved') ||
-        (filters.sellerStatus === 'pending' && user.seller_status === 'pending');
+        (filters.sellerStatus === 'approved' && user.seller_approved) ||
+        (filters.sellerStatus === 'pending' && user.is_seller && !user.seller_approved);
 
       return matchesSearch && matchesRole && matchesStatus && matchesSellerStatus;
     });
@@ -267,16 +240,6 @@ const UserManagement = () => {
     });
   }, [users, searchTerm, filters, sortConfig]);
 
-  // Gestion des filtres
-  const updateFilter = useCallback((filterName: keyof typeof filters, value: string) => {
-    setFilters(prev => ({ ...prev, [filterName]: value }));
-  }, []);
-
-  // Gestion des changements du formulaire
-  const handleNewUserChange = useCallback((field: keyof typeof newUser, value: any) => {
-    setNewUser(prev => ({ ...prev, [field]: value }));
-  }, []);
-
   if (loading && users.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -287,16 +250,13 @@ const UserManagement = () => {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-4">
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 mr-2" />
             <h3 className="font-medium">Error Loading Users</h3>
           </div>
-          <p className="mt-1 text-sm">{error.message}</p>
-          {error.details && (
-            <p className="mt-1 text-xs opacity-75">{error.details}</p>
-          )}
+          <p className="mt-1 text-sm">{error}</p>
           <button
             onClick={fetchUsers}
             className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
@@ -309,26 +269,26 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header et filtres */}
+    <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-4">
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200">
+        {/* Header */}
+        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Management</h1>
               <p className="mt-1 text-sm text-gray-500">
                 {filteredAndSortedUsers.length} {filteredAndSortedUsers.length === 1 ? 'user' : 'users'} found
               </p>
             </div>
 
-            <div className="flex gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <div className="relative flex-grow">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+                  <Search className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                   placeholder="Search users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -337,20 +297,20 @@ const UserManagement = () => {
 
               <button
                 onClick={() => setShowAddUserModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add User
+                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>Add User</span>
               </button>
             </div>
           </div>
 
-          {/* Filtres */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Filters */}
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <select
-              className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md sm:text-sm"
+              className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={filters.role}
-              onChange={(e) => updateFilter('role', e.target.value)}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value })}
             >
               <option value="all">All Roles</option>
               <option value="admin">Admins</option>
@@ -358,9 +318,9 @@ const UserManagement = () => {
             </select>
 
             <select
-              className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md sm:text-sm"
+              className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={filters.status}
-              onChange={(e) => updateFilter('status', e.target.value)}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -368,9 +328,9 @@ const UserManagement = () => {
             </select>
 
             <select
-              className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md sm:text-sm"
+              className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={filters.sellerStatus}
-              onChange={(e) => updateFilter('sellerStatus', e.target.value)}
+              onChange={(e) => setFilters({ ...filters, sellerStatus: e.target.value })}
             >
               <option value="all">All Seller Types</option>
               <option value="seller">Sellers</option>
@@ -380,7 +340,7 @@ const UserManagement = () => {
           </div>
         </div>
 
-        {/* Tableau des utilisateurs */}
+        {/* Users Table */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -396,14 +356,15 @@ const UserManagement = () => {
                   sortKey="email"
                   sortConfig={sortConfig}
                   onClick={requestSort}
+                  className="hidden md:table-cell"
                 />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                   Seller
                 </th>
                 <TableHeader
@@ -411,48 +372,228 @@ const UserManagement = () => {
                   sortKey="created_at"
                   sortConfig={sortConfig}
                   onClick={requestSort}
+                  className="hidden xl:table-cell"
                 />
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAndSortedUsers.map((user) => (
-                <UserRow
-                  key={user.user_id}
-                  user={user}
-                  onUpdateStatus={updateUserStatus}
-                />
+                <tr key={user.user_id} className="hover:bg-gray-50">
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                        <User className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="ml-2">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-[120px]">
+                          {user.username || 'No username'}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate max-w-[120px]">
+                          {user.user_id.slice(0, 8)}...
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell truncate max-w-[180px]">
+                    {user.email}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {user.role === 'admin' ? 'Admin' : 'User'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                      {user.status === 'active' ? 'Active' : 'Banned'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap hidden lg:table-cell">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_seller
+                        ? (user.seller_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')
+                        : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {user.is_seller
+                        ? (user.seller_approved ? 'Approved' : 'Pending')
+                        : 'None'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">
+                    {user.created_at.toLocaleDateString()}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
+                    {user.role !== 'admin' && (
+                      <button
+                        onClick={() => updateUserStatus('role', user.user_id, 'admin')}
+                        className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                        title="Make admin"
+                      >
+                        <Shield className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => updateUserStatus('ban', user.user_id, user.status !== 'banned')}
+                      className={`p-1 rounded ${user.status === 'banned'
+                          ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                          : 'text-red-600 hover:text-red-900 hover:bg-red-50'
+                        }`}
+                      title={user.status === 'banned' ? 'Unban' : 'Ban'}
+                    >
+                      <Ban className="h-4 w-4" />
+                    </button>
+                    {user.is_seller && (
+                      <button
+                        onClick={() => updateUserStatus('seller', user.user_id, !user.seller_approved)}
+                        className={`p-1 rounded ${user.seller_approved
+                            ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
+                            : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                          }`}
+                        title={user.seller_approved ? 'Revoke approval' : 'Approve seller'}
+                      >
+                        {user.seller_approved ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                      </button>
+                    )}
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Modal d'ajout d'utilisateur */}
-      <AddUserModal
-        isOpen={showAddUserModal}
-        onClose={() => setShowAddUserModal(false)}
-        newUser={newUser}
-        onChange={handleNewUserChange}
-        onSubmit={createUser}
-        isLoading={addingUser}
-      />
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-4">Add New User</h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="email"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Key className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="password"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={newUser.username}
+                    onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={newUser.role}
+                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'authenticated' })}
+                    >
+                      <option value="authenticated">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        checked={newUser.is_seller}
+                        onChange={(e) => setNewUser({ ...newUser, is_seller: e.target.checked })}
+                      />
+                      <span className="text-sm text-gray-700">Is Seller</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => setShowAddUserModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  onClick={createUser}
+                  disabled={!newUser.email || !newUser.password || !newUser.username}
+                >
+                  Add User
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// Composant TableHeader pour gérer le tri
+// TableHeader component
 const TableHeader: React.FC<{
   label: string;
-  sortKey: keyof User;
+  sortKey: keyof UserProfile;
   sortConfig: { key: string; direction: 'asc' | 'desc' };
-  onClick: (key: keyof User) => void;
-}> = ({ label, sortKey, sortConfig, onClick }) => (
+  onClick: (key: keyof UserProfile) => void;
+  className?: string;
+}> = ({ label, sortKey, sortConfig, onClick, className }) => (
   <th
     scope="col"
-    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+    className={`px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${className || ''}`}
     onClick={() => onClick(sortKey)}
   >
     <div className="flex items-center">
@@ -471,225 +612,5 @@ const TableHeader: React.FC<{
     </div>
   </th>
 );
-
-// Composant UserRow pour afficher une ligne d'utilisateur
-const UserRow: React.FC<{
-  user: User;
-  onUpdateStatus: (action: 'ban' | 'role' | 'seller', userId: string, value: any) => void;
-}> = ({ user, onUpdateStatus }) => (
-  <tr key={user.user_id} className="hover:bg-gray-50">
-    <td className="px-6 py-4 whitespace-nowrap">
-      <div className="flex items-center">
-        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-          <User className="h-6 w-6 text-gray-400" />
-        </div>
-        <div className="ml-4">
-          <div className="text-sm font-medium text-gray-900">
-            {user.username || 'No username'}
-          </div>
-          <div className="text-sm text-gray-500">
-            {user.user_id.slice(0, 8)}...
-          </div>
-        </div>
-      </div>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <div className="text-sm text-gray-900">{user.email}</div>
-      {user.phone && (
-        <div className="flex items-center text-sm text-gray-500 mt-1">
-          <Phone className="h-4 w-4 mr-1" />
-          {user.phone}
-        </div>
-      )}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-        }`}>
-        {user.role === 'admin' ? 'Admin' : 'User'}
-      </span>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-        {user.status === 'active' ? 'Active' : 'Banned'}
-      </span>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.seller_status === 'approved' ? 'bg-green-100 text-green-800' :
-          user.seller_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
-        }`}>
-        {user.seller_status === 'approved' ? 'Approved' :
-          user.seller_status === 'pending' ? 'Pending' : 'Not seller'}
-      </span>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-      {user.created_at.toLocaleDateString()}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
-      {user.role !== 'admin' && (
-        <button
-          onClick={() => onUpdateStatus('role', user.user_id, 'admin')}
-          className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-          title="Make admin"
-        >
-          <Shield className="h-4 w-4" />
-        </button>
-      )}
-
-      <button
-        onClick={() => onUpdateStatus('ban', user.user_id, user.status !== 'banned')}
-        className={`p-1 rounded ${user.status === 'banned'
-            ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
-            : 'text-red-600 hover:text-red-900 hover:bg-red-50'
-          }`}
-        title={user.status === 'banned' ? 'Unban' : 'Ban'}
-      >
-        <Ban className="h-4 w-4" />
-      </button>
-
-      {user.is_seller && !user.seller_approved && (
-        <button
-          onClick={() => onUpdateStatus('seller', user.user_id, true)}
-          className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-          title="Approve seller"
-        >
-          <Check className="h-4 w-4" />
-        </button>
-      )}
-
-      {user.is_seller && user.seller_approved && (
-        <button
-          onClick={() => onUpdateStatus('seller', user.user_id, false)}
-          className="text-yellow-600 hover:text-yellow-900 p-1 rounded hover:bg-yellow-50"
-          title="Revoke approval"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-    </td>
-  </tr>
-);
-
-// Composant AddUserModal
-const AddUserModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  newUser: {
-    email: string;
-    password: string;
-    username: string;
-    phone: string;
-    role: 'admin' | 'authenticated';
-    is_seller: boolean;
-  };
-  onChange: (field: string, value: any) => void;
-  onSubmit: () => void;
-  isLoading: boolean;
-}> = ({ isOpen, onClose, newUser, onChange, onSubmit, isLoading }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h2 className="text-xl font-bold mb-4">Add New User</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email*</label>
-            <input
-              type="email"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={newUser.email}
-              onChange={(e) => onChange('email', e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password*</label>
-            <input
-              type="password"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={newUser.password}
-              onChange={(e) => onChange('password', e.target.value)}
-              required
-              minLength={6}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Username*</label>
-            <input
-              type="text"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={newUser.username}
-              onChange={(e) => onChange('username', e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Phone</label>
-            <input
-              type="tel"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={newUser.phone}
-              onChange={(e) => onChange('phone', e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Role</label>
-            <select
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={newUser.role}
-              onChange={(e) => onChange('role', e.target.value as 'admin' | 'authenticated')}
-            >
-              <option value="authenticated">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              id="is_seller"
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              checked={newUser.is_seller}
-              onChange={(e) => onChange('is_seller', e.target.checked)}
-            />
-            <label htmlFor="is_seller" className="ml-2 block text-sm text-gray-700">
-              Is Seller
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end space-x-3">
-          <button
-            type="button"
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            onClick={onSubmit}
-            disabled={isLoading || !newUser.email || !newUser.password || !newUser.username}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="animate-spin h-4 w-4 mr-2 inline" />
-                Adding...
-              </>
-            ) : 'Add User'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default UserManagement;

@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { DatePicker, Button, Select, Table, Card, Statistic, message, Tag } from 'antd';
+import { DatePicker, Button, Select, Table, Card, Statistic, message, Tag, Grid } from 'antd';
 import { Download, FileText, Users, ShoppingBag, Calendar, UserPlus } from 'lucide-react';
 import { CSVLink } from 'react-csv';
-import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
-import type { RangePickerProps } from 'antd/es/date-picker';
+import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'react-toastify';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+const { useBreakpoint } = Grid;
 
 interface ReportData {
     users?: any[];
@@ -24,6 +23,7 @@ interface ReportData {
 
 const ReportPage = () => {
     const { user } = useAuth();
+    const screens = useBreakpoint();
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState<ReportData>({});
     const [reportType, setReportType] = useState('users');
@@ -31,36 +31,28 @@ const ReportPage = () => {
         dayjs().subtract(30, 'days'),
         dayjs(),
     ]);
-    const [error, setError] = useState<{ message: string; details?: string } | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const disabledDate: RangePickerProps['disabledDate'] = (current) => {
-        return current && current > dayjs().endOf('day');
-    };
+    const disabledDate = (current: Dayjs) => current && current > dayjs().endOf('day');
 
     const fetchUsers = useCallback(async (start: string, end: string) => {
         try {
             const { data, error: fetchError } = await supabase.rpc('get_admin_users');
-
             if (fetchError) throw fetchError;
 
-            // Filtrer par date si nécessaire
-            const filteredUsers = data.filter((user: any) => {
-                const createdAt = new Date(user.created_at);
-                return createdAt >= new Date(start) && createdAt <= new Date(end);
-            });
-
-            const formattedUsers = filteredUsers.map((user: any) => ({
-                ...user,
-                created_at: new Date(user.created_at),
-                banned_until: user.banned_until ? new Date(user.banned_until) : undefined,
-                last_sign_in_at: user.last_sign_in_at ? new Date(user.last_sign_in_at) : undefined,
-                status: user.banned_until && new Date(user.banned_until) > new Date() ? 'banned' : 'active',
-                seller_status: user.is_seller
-                    ? (user.seller_approved ? 'approved' : 'pending')
-                    : 'none'
-            }));
-
-            return formattedUsers;
+            return data
+                .filter((user: any) => {
+                    const createdAt = new Date(user.created_at);
+                    return createdAt >= new Date(start) && createdAt <= new Date(end);
+                })
+                .map((user: any) => ({
+                    ...user,
+                    created_at: new Date(user.created_at),
+                    banned_until: user.banned_until ? new Date(user.banned_until) : undefined,
+                    last_sign_in_at: user.last_sign_in_at ? new Date(user.last_sign_in_at) : undefined,
+                    status: user.banned_until && new Date(user.banned_until) > new Date() ? 'banned' : 'active',
+                    seller_status: user.is_seller ? (user.seller_approved ? 'approved' : 'pending') : 'none'
+                }));
         } catch (err) {
             console.error('Error fetching users:', err);
             throw err;
@@ -78,33 +70,25 @@ const ReportPage = () => {
 
             if (fetchError) throw fetchError;
 
-            // Récupérer les informations utilisateur pour chaque annonce
             const userIds = [...new Set(data.map((listing: any) => listing.user_id))];
-            const { data: usersData, error: usersError } = await supabase
+            const { data: usersData } = await supabase
                 .from('profiles')
                 .select('user_id, username')
                 .in('user_id', userIds);
 
-            if (usersError) throw usersError;
-
-            const listingsWithUsers = data.map((listing: any) => {
-                const user = usersData.find((u: any) => u.user_id === listing.user_id);
-                return {
-                    ...listing,
-                    username: user?.username || 'Unknown',
-                    created_at: new Date(listing.created_at),
-                    updated_at: new Date(listing.updated_at),
-                };
-            });
-
-            return listingsWithUsers;
+            return data.map((listing: any) => ({
+                ...listing,
+                username: usersData?.find((u: any) => u.user_id === listing.user_id)?.username || 'Unknown',
+                created_at: new Date(listing.created_at),
+                updated_at: new Date(listing.updated_at),
+            }));
         } catch (err) {
             console.error('Error fetching listings:', err);
             throw err;
         }
     }, []);
 
-    const fetchReportData = async () => {
+    const fetchReportData = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -112,9 +96,6 @@ const ReportPage = () => {
             const start = startDate.format('YYYY-MM-DD');
             const end = endDate.format('YYYY-MM-DD');
 
-            let data: ReportData = {};
-
-            // Fetch statistics
             const [
                 { count: totalUsers },
                 { count: newUsers },
@@ -128,13 +109,14 @@ const ReportPage = () => {
                     .eq('status', 'active'),
             ]);
 
-            data.stats = {
-                totalUsers: totalUsers || 0,
-                newUsers: newUsers || 0,
-                activeListings: activeListings || 0,
+            const data: ReportData = {
+                stats: {
+                    totalUsers: totalUsers || 0,
+                    newUsers: newUsers || 0,
+                    activeListings: activeListings || 0,
+                }
             };
 
-            // Fetch detailed data based on report type
             if (reportType === 'users') {
                 data.users = await fetchUsers(start, end);
             } else if (reportType === 'listings') {
@@ -142,34 +124,32 @@ const ReportPage = () => {
             }
 
             setReportData(data);
-
         } catch (err) {
             console.error('Error fetching report data:', err);
-            setError({
-                message: 'Failed to load data',
-                details: err instanceof Error ? err.message : undefined
-            });
+            setError('Failed to load data. Please try again.');
             toast.error('Failed to load data');
         } finally {
             setLoading(false);
         }
-    };
+    }, [dateRange, fetchListings, fetchUsers, reportType]);
 
     useEffect(() => {
         fetchReportData();
-    }, [reportType, dateRange, fetchUsers, fetchListings]);
+    }, [fetchReportData]);
 
-    const columns = {
+    const columns = useMemo(() => ({
         users: [
             {
                 title: 'Username',
                 dataIndex: 'username',
                 key: 'username',
+                responsive: ['md'],
             },
             {
                 title: 'Email',
                 dataIndex: 'email',
                 key: 'email',
+                responsive: ['lg'],
             },
             {
                 title: 'Status',
@@ -182,7 +162,7 @@ const ReportPage = () => {
                 ),
             },
             {
-                title: 'Seller Status',
+                title: 'Seller',
                 dataIndex: 'seller_status',
                 key: 'seller_status',
                 render: (status: string) => {
@@ -191,12 +171,13 @@ const ReportPage = () => {
                     if (status === 'pending') color = 'orange';
                     return <Tag color={color}>{status}</Tag>;
                 },
+                responsive: ['md'],
             },
             {
-                title: 'Registration Date',
+                title: 'Registered',
                 dataIndex: 'created_at',
                 key: 'created_at',
-                render: (date: Date) => dayjs(date).format('DD/MM/YYYY HH:mm'),
+                render: (date: Date) => dayjs(date).format(screens.xs ? 'DD/MM' : 'DD/MM/YYYY'),
             },
         ],
         listings: [
@@ -209,6 +190,7 @@ const ReportPage = () => {
                 title: 'User',
                 dataIndex: 'username',
                 key: 'username',
+                responsive: ['md'],
             },
             {
                 title: 'Price',
@@ -220,6 +202,7 @@ const ReportPage = () => {
                 title: 'Category',
                 dataIndex: 'category',
                 key: 'category',
+                responsive: ['lg'],
             },
             {
                 title: 'Status',
@@ -232,15 +215,15 @@ const ReportPage = () => {
                 ),
             },
             {
-                title: 'Creation Date',
+                title: 'Created',
                 dataIndex: 'created_at',
                 key: 'created_at',
-                render: (date: Date) => dayjs(date).format('DD/MM/YYYY HH:mm'),
+                render: (date: Date) => dayjs(date).format(screens.xs ? 'DD/MM' : 'DD/MM/YYYY'),
             },
         ],
-    };
+    }), [screens.xs]);
 
-    const getCSVData = () => {
+    const getCSVData = useCallback(() => {
         if (!reportData) return [];
 
         switch (reportType) {
@@ -271,19 +254,27 @@ const ReportPage = () => {
             default:
                 return [];
         }
-    };
+    }, [reportData, reportType]);
+
+    const datePresets = useMemo(() => [
+        { label: 'Last 7 days', value: [dayjs().subtract(7, 'days'), dayjs()] },
+        { label: 'Last 30 days', value: [dayjs().subtract(30, 'days'), dayjs()] },
+        { label: 'This month', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+        { label: 'Last month', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+    ], []);
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
+        <div className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                     <FileText className="text-blue-500" /> Admin Reports
                 </h1>
-                <div className="flex items-center gap-4">
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
                     <Select
                         value={reportType}
                         onChange={setReportType}
-                        className="w-40"
+                        className="w-full sm:w-40"
                     >
                         <Option value="users">
                             <div className="flex items-center gap-2">
@@ -301,22 +292,22 @@ const ReportPage = () => {
                         value={dateRange}
                         onChange={(dates) => dates && setDateRange(dates)}
                         disabledDate={disabledDate}
-                        className="w-64"
-                        presets={[
-                            { label: 'Last 7 days', value: [dayjs().subtract(7, 'days'), dayjs()] },
-                            { label: 'Last 30 days', value: [dayjs().subtract(30, 'days'), dayjs()] },
-                            { label: 'This month', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-                            { label: 'Last month', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
-                        ]}
+                        className="w-full sm:w-64"
+                        presets={datePresets}
                         suffixIcon={<Calendar size={16} />}
                     />
 
                     <CSVLink
                         data={getCSVData()}
                         filename={`admin-report-${reportType}-${dayjs().format('YYYY-MM-DD')}.csv`}
+                        className="w-full sm:w-auto"
                     >
-                        <Button type="primary" icon={<Download size={16} />}>
-                            Export CSV
+                        <Button
+                            type="primary"
+                            icon={<Download size={16} />}
+                            className="w-full sm:w-auto"
+                        >
+                            {screens.xs ? 'Export' : 'Export CSV'}
                         </Button>
                     </CSVLink>
                 </div>
@@ -324,14 +315,13 @@ const ReportPage = () => {
 
             {error && (
                 <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg">
-                    <p className="font-semibold">{error.message}</p>
-                    {error.details && <p className="text-sm">{error.details}</p>}
+                    <p className="font-semibold">{error}</p>
                     <Button className="mt-2" onClick={fetchReportData}>Retry</Button>
                 </div>
             )}
 
             {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <Card>
                     <Statistic
                         title="Total Users"
@@ -358,15 +348,16 @@ const ReportPage = () => {
             {/* Data Table */}
             <Card
                 loading={loading}
-                title={`Recent ${reportType === 'users' ? 'Users' : 'Listings'}`}
+                title={`${reportType === 'users' ? 'Users' : 'Listings'} Report`}
             >
                 <Table
                     columns={columns[reportType as keyof typeof columns]}
                     dataSource={reportType === 'users' ? reportData.users : reportData.listings}
                     rowKey="id"
-                    pagination={{ pageSize: 10 }}
+                    pagination={{ pageSize: 10, showSizeChanger: false }}
                     scroll={{ x: true }}
                     locale={{ emptyText: 'No data available' }}
+                    size={screens.xs ? 'small' : 'middle'}
                 />
             </Card>
         </div>
