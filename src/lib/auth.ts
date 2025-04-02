@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-type SellerType = 'particular' | 'professional';
+export type SellerType = 'particular' | 'professional';
 // auth.ts
 export async function createUserAsAdmin(userData: {
   email: string;
@@ -72,7 +72,10 @@ export async function signUp({
           phone: wantsToSell ? phone : null,
           whatsapp: wantsToSell ? whatsapp : null,
           company_name: wantsToSell && sellerType === 'professional' ? companyName : null,
-          seller_approved: false
+          seller_approved: false,
+          email,
+          last_sign_in_at: new Date().toISOString(),
+          banned_until: null
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`
       }
@@ -97,8 +100,7 @@ export async function signIn(email: string, password: string) {
     if (!email || !password) {
       throw new Error('Email and password are required');
     }
-    console.log('Attempting to sign in with email:', email);
-    console.log('Attempting to sign in with password:', password);
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password

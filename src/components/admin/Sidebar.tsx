@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, Flag, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, Flag, Settings, LogOut, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Logo from '../Logo';
 import { signOut } from '../../lib/auth';
@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Listings', href: '/admin/listings', icon: ShoppingBag },
+  { name: 'messagerie', href: '/admin/chatList', icon: MessageSquare },
   { name: 'Reports', href: '/admin/reports', icon: Flag },
   { name: 'Settings', href: '/admin/setting', icon: Settings },
 ];

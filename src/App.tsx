@@ -26,6 +26,7 @@ import Chatperso from './pages/Chatperso';
 import { ThemeProvider } from './contexts/ThemeContext';
 import FavoritesPage from './pages/Favoris';
 import ReportPage from './pages/Report';
+import ProfilesUsers from './pages/admin/ProfilesUsers';
 
 
 // Component to handle scrolling to top on page navigation
@@ -58,9 +59,11 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="listings" element={<AdminListings />} />
-
+              <Route path="chat/:userId" element={<Chatperso />} />
               <Route path="reports" element={<ReportPage />} />
               <Route path="setting" element={<Settings />} />
+              <Route path="chatList" element={<ChatList />} />
+              <Route path="profils/:id" element={<ProfilesUsers />} />
 
             </Route>
 

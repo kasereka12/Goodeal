@@ -18,6 +18,7 @@ const ChatList = () => {
             setIsLoading(false);
         }
     }, [user]);
+    const isAdmin = user?.user_metadata?.role === "admin";
 
     const fetchConversations = async () => {
         if (!user?.id) return;
@@ -122,7 +123,7 @@ const ChatList = () => {
             <div className="divide-y divide-gray-100">
                 {filteredConversations.map((conversation) => (
                     <Link
-                        to={`/chat/${conversation.user.id}`}
+                        to={isAdmin ? `/admin/chat/${conversation.user.id}` : `/chat/${conversation.user.id}`}
                         key={conversation.user.id}
                         className="block hover:bg-gray-50 transition-colors"
                     >

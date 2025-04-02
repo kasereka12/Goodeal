@@ -3,10 +3,67 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Search, User, Shield, Ban, Loader2, Check, X, Phone,
-  ChevronUp, ChevronDown, AlertCircle, Plus, Mail, Key
+  ChevronUp, ChevronDown, AlertCircle, Plus, Mail, Key, Trash2, Crown
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
+import { SellerType } from '../../lib/auth';
+
+interface SignUpParams {
+  email: string;
+  password: string;
+  username: string;
+  wantsToSell?: boolean;
+  sellerType?: SellerType;
+  phone?: string;
+  whatsapp?: string;
+  companyName?: string;
+  is_super_admin?: boolean;
+}
+
+async function signUp({
+  email,
+  password,
+  username,
+  wantsToSell = false,
+  sellerType = 'particular',
+  phone = '',
+  whatsapp = '',
+  companyName = '',
+  is_super_admin = false
+}: SignUpParams) {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          is_seller: wantsToSell,
+          seller_type: wantsToSell ? sellerType : null,
+          phone: wantsToSell ? phone : null,
+          whatsapp: wantsToSell ? whatsapp : null,
+          company_name: wantsToSell && sellerType === 'professional' ? companyName : null,
+          seller_approved: false,
+          email,
+          last_sign_in_at: new Date().toISOString(),
+          banned_until: null,
+          is_super_admin
+        }
+      }
+    });
+
+    if (error) throw error;
+    return {
+      user: data.user,
+      session: data.session,
+      isSeller: wantsToSell,
+      needsApproval: wantsToSell
+    };
+  } catch (error: any) {
+    throw new Error(error.message || 'Registration failed');
+  }
+}
 
 interface UserProfile {
   user_id: string;
@@ -20,13 +77,230 @@ interface UserProfile {
   created_at: Date;
   banned_until?: Date;
   last_sign_in_at?: Date;
+  company_name?: string;
+  raw_user_meta_data?: {
+    is_super_admin?: boolean;
+  };
 }
+
+const UserRow = ({
+  user,
+  updateUserStatus,
+  onDeleteClick,
+  currentUser
+}: {
+  user: UserProfile,
+  updateUserStatus: (action: 'ban' | 'role' | 'seller', userId: string, value: any) => void,
+  onDeleteClick: (userId: string) => void,
+  currentUser: any
+}) => {
+  const navigate = useNavigate();
+  const isSuperAdmin = user.raw_user_meta_data?.is_super_admin;
+  const isCurrentUserSuperAdmin = currentUser?.user_metadata?.is_super_admin;
+
+  const handleRowClick = (e: React.MouseEvent, userId: string) => {
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    navigate(`/admin/profils/${userId}`);
+  };
+
+  return (
+    <tr
+      key={user.user_id}
+      className={`hover:bg-gray-50 cursor-pointer ${isSuperAdmin ? 'bg-blue-50' : ''}`}
+      onClick={(e) => handleRowClick(e, user.user_id)}
+    >
+      <td className="px-3 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+            {isSuperAdmin ? (
+              <Crown className="h-4 w-4 text-yellow-500 fill-yellow-300" />
+            ) : (
+              <User className="h-4 w-4 text-gray-400" />
+            )}
+          </div>
+          <div className="ml-2">
+            <div className="text-sm font-medium text-gray-900 truncate max-w-[120px]">
+              {user.username || 'No username'}
+              {isSuperAdmin && (
+                <span className="ml-1 text-yellow-600" title="Super Admin">★</span>
+              )}
+            </div>
+            <div className="text-xs text-gray-500 truncate max-w-[120px]">
+              {user.user_id.slice(0, 8)}...
+            </div>
+          </div>
+        </div>
+      </td>
+      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell truncate max-w-[180px]">
+        {user.email}
+      </td>
+      <td className="px-3 py-4 whitespace-nowrap">
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          user.role === 'admin' ? 
+            (isSuperAdmin ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {isSuperAdmin ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'User'}
+        </span>
+      </td>
+      <td className="px-3 py-4 whitespace-nowrap">
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {user.status === 'active' ? 'Active' : 'Banned'}
+        </span>
+      </td>
+      <td className="px-3 py-4 whitespace-nowrap hidden lg:table-cell">
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          user.is_seller
+            ? (user.seller_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {user.is_seller
+            ? (user.seller_approved ? 'Approved' : 'Pending')
+            : 'None'}
+        </span>
+      </td>
+      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">
+        {user.created_at.toLocaleDateString()}
+      </td>
+      <td
+        className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!isSuperAdmin ? (
+          <>
+            {user.role !== 'admin' ? (
+              <button
+                onClick={() => updateUserStatus('role', user.user_id, 'admin')}
+                className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                title="Make admin"
+              >
+                <Shield className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => updateUserStatus('role', user.user_id, 'authenticated')}
+                className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
+                title="Remove admin"
+              >
+                <User className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => updateUserStatus('ban', user.user_id, user.status !== 'banned')}
+              className={`p-1 rounded ${
+                user.status === 'banned'
+                  ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                  : 'text-red-600 hover:text-red-900 hover:bg-red-50'
+              }`}
+              title={user.status === 'banned' ? 'Unban' : 'Ban'}
+            >
+              <Ban className="h-4 w-4" />
+            </button>
+            {user.is_seller && (
+              <button
+                onClick={() => updateUserStatus('seller', user.user_id, !user.seller_approved)}
+                className={`p-1 rounded ${
+                  user.seller_approved
+                    ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
+                    : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                }`}
+                title={user.seller_approved ? 'Revoke approval' : 'Approve seller'}
+              >
+                {user.seller_approved ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(user.user_id);
+              }}
+              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+              title="Delete user"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </>
+        ) : (
+          <span className="text-xs text-blue-600" title="Super Admin - Protected account">
+            <Crown className="h-4 w-4 inline mr-1 text-yellow-500" />
+            Protected
+          </span>
+        )}
+      </td>
+    </tr>
+  );
+};
+
+const TableHeader: React.FC<{
+  label: string;
+  sortKey: keyof UserProfile;
+  sortConfig: { key: string; direction: 'asc' | 'desc' };
+  onClick: (key: keyof UserProfile) => void;
+  className?: string;
+}> = ({ label, sortKey, sortConfig, onClick, className }) => (
+  <th
+    scope="col"
+    className={`px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${className || ''}`}
+    onClick={() => onClick(sortKey)}
+  >
+    <div className="flex items-center">
+      {label}
+      {sortConfig.key === sortKey ? (
+        sortConfig.direction === 'asc' ? (
+          <ChevronUp className="ml-1 h-4 w-4" />
+        ) : (
+          <ChevronDown className="ml-1 h-4 w-4" />
+        )
+      ) : (
+        <span className="ml-1 text-gray-300">
+          <ChevronUp className="h-4 w-4" />
+        </span>
+      )}
+    </div>
+  </th>
+);
+
+const DeleteConfirmationModal = ({
+  username,
+  onConfirm,
+  onCancel
+}: {
+  username: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <h3 className="text-lg font-medium mb-4">Confirm Deletion</h3>
+      <p className="mb-6">
+        Are you sure you want to delete {username || 'this user'}? This action cannot be undone.
+      </p>
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const UserManagement = () => {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // States
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,19 +321,24 @@ const UserManagement = () => {
     username: '',
     phone: '',
     role: 'authenticated' as 'admin' | 'authenticated',
-    is_seller: false
+    is_seller: false,
+    companyName: '',
+    is_super_admin: false
+  });
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    userId: null as string | null,
+    username: null as string | null
   });
 
-  // Check admin permissions
   useEffect(() => {
-    if (currentUser?.user_metadata?.role !== 'admin') {
+    if (currentUser?.user_metadata?.role !== 'admin' && !currentUser?.user_metadata?.is_super_admin) {
       navigate('/unauthorized', { replace: true });
     } else {
       fetchUsers();
     }
   }, [currentUser, navigate]);
 
-  // Fetch users
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -87,35 +366,24 @@ const UserManagement = () => {
     }
   }, []);
 
-  // Create new user
   const createUser = useCallback(async () => {
     try {
-      // 1. Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      if (newUser.is_super_admin && !currentUser?.user_metadata?.is_super_admin) {
+        toast.error('Only Super Admin can create another Super Admin');
+        return;
+      }
+
+      const { user, session, isSeller, needsApproval } = await signUp({
         email: newUser.email,
         password: newUser.password,
-        email_confirm: true,
-        user_metadata: {
-          role: newUser.role,
-          username: newUser.username
-        }
+        username: newUser.username,
+        wantsToSell: newUser.is_seller,
+        sellerType: 'particular',
+        phone: newUser.phone,
+        whatsapp: '',
+        companyName: newUser.companyName,
+        is_super_admin: newUser.is_super_admin
       });
-
-      if (authError) throw authError;
-
-      // 2. Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          username: newUser.username,
-          phone: newUser.phone,
-          is_seller: newUser.is_seller,
-          seller_approved: newUser.is_seller,
-          show_phone: !!newUser.phone
-        })
-        .eq('user_id', authData.user.id);
-
-      if (profileError) throw profileError;
 
       toast.success('User created successfully');
       setShowAddUserModal(false);
@@ -125,20 +393,26 @@ const UserManagement = () => {
         username: '',
         phone: '',
         role: 'authenticated',
-        is_seller: false
+        is_seller: false,
+        companyName: '',
+        is_super_admin: false
       });
 
-      // 3. Refresh list
       await fetchUsers();
     } catch (err) {
       console.error('Error creating user:', err);
       toast.error(`Failed to create user: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-  }, [newUser, fetchUsers]);
+  }, [newUser, fetchUsers, currentUser]);
 
-  // Update user status
   const updateUserStatus = useCallback(async (action: 'ban' | 'role' | 'seller', userId: string, value: any) => {
     try {
+      const targetUser = users.find(u => u.user_id === userId);
+      if (targetUser?.raw_user_meta_data?.is_super_admin) {
+        toast.error('Cannot modify Super Admin account');
+        return;
+      }
+
       let error;
 
       switch (action) {
@@ -164,7 +438,6 @@ const UserManagement = () => {
 
       if (error) throw error;
 
-      // Optimistic update
       setUsers(prev => prev.map(user => {
         if (user.user_id === userId) {
           return {
@@ -188,9 +461,42 @@ const UserManagement = () => {
       toast.error(`Failed to update user: ${err instanceof Error ? err.message : 'Unknown error'}`);
       fetchUsers();
     }
-  }, [fetchUsers]);
+  }, [fetchUsers, users]);
 
-  // Sorting
+  const deleteUser = useCallback(async (userId: string) => {
+    try {
+      const targetUser = users.find(u => u.user_id === userId);
+      if (targetUser?.raw_user_meta_data?.is_super_admin) {
+        toast.error('Cannot delete Super Admin account');
+        return;
+      }
+
+      const { error } = await supabase.rpc('delete_user_account', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+
+      setUsers(prev => prev.filter(user => user.user_id !== userId));
+      toast.success('User deleted successfully');
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      toast.error(`Failed to delete user: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      fetchUsers();
+    } finally {
+      setDeleteModal({ show: false, userId: null, username: null });
+    }
+  }, [fetchUsers, users]);
+
+  const handleDeleteClick = (userId: string) => {
+    const user = users.find(u => u.user_id === userId);
+    setDeleteModal({
+      show: true,
+      userId,
+      username: user?.username || null
+    });
+  };
+
   const requestSort = useCallback((key: keyof UserProfile) => {
     setSortConfig(prev => ({
       key,
@@ -198,7 +504,6 @@ const UserManagement = () => {
     }));
   }, []);
 
-  // Filter and sort users
   const filteredAndSortedUsers = useMemo(() => {
     const filtered = users.filter(user => {
       const matchesSearch =
@@ -271,7 +576,6 @@ const UserManagement = () => {
   return (
     <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-4">
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        {/* Header */}
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -295,17 +599,18 @@ const UserManagement = () => {
                 />
               </div>
 
-              <button
-                onClick={() => setShowAddUserModal(true)}
-                className="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                <span>Add User</span>
-              </button>
+              {currentUser?.user_metadata?.is_super_admin && (
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span>Add User</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Filters */}
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <select
               className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -340,7 +645,6 @@ const UserManagement = () => {
           </div>
         </div>
 
-        {/* Users Table */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -381,91 +685,19 @@ const UserManagement = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAndSortedUsers.map((user) => (
-                <tr key={user.user_id} className="hover:bg-gray-50">
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                        <User className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <div className="ml-2">
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-[120px]">
-                          {user.username || 'No username'}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate max-w-[120px]">
-                          {user.user_id.slice(0, 8)}...
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell truncate max-w-[180px]">
-                    {user.email}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {user.role === 'admin' ? 'Admin' : 'User'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                      {user.status === 'active' ? 'Active' : 'Banned'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap hidden lg:table-cell">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_seller
-                        ? (user.seller_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')
-                        : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {user.is_seller
-                        ? (user.seller_approved ? 'Approved' : 'Pending')
-                        : 'None'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">
-                    {user.created_at.toLocaleDateString()}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
-                    {user.role !== 'admin' && (
-                      <button
-                        onClick={() => updateUserStatus('role', user.user_id, 'admin')}
-                        className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                        title="Make admin"
-                      >
-                        <Shield className="h-4 w-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => updateUserStatus('ban', user.user_id, user.status !== 'banned')}
-                      className={`p-1 rounded ${user.status === 'banned'
-                          ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
-                          : 'text-red-600 hover:text-red-900 hover:bg-red-50'
-                        }`}
-                      title={user.status === 'banned' ? 'Unban' : 'Ban'}
-                    >
-                      <Ban className="h-4 w-4" />
-                    </button>
-                    {user.is_seller && (
-                      <button
-                        onClick={() => updateUserStatus('seller', user.user_id, !user.seller_approved)}
-                        className={`p-1 rounded ${user.seller_approved
-                            ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
-                            : 'text-green-600 hover:text-green-900 hover:bg-green-50'
-                          }`}
-                        title={user.seller_approved ? 'Revoke approval' : 'Approve seller'}
-                      >
-                        {user.seller_approved ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                <UserRow
+                  key={user.user_id}
+                  user={user}
+                  updateUserStatus={updateUserStatus}
+                  onDeleteClick={handleDeleteClick}
+                  currentUser={currentUser}
+                />
               ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Add User Modal */}
       {showAddUserModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
@@ -532,18 +764,22 @@ const UserManagement = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                    <select
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      value={newUser.role}
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'authenticated' })}
-                    >
-                      <option value="authenticated">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                {currentUser?.user_metadata?.is_super_admin && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_super_admin"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      checked={newUser.is_super_admin}
+                      onChange={(e) => setNewUser({ ...newUser, is_super_admin: e.target.checked })}
+                    />
+                    <label htmlFor="is_super_admin" className="text-sm text-gray-700">
+                      Super Admin
+                    </label>
                   </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-end">
                     <label className="flex items-center space-x-2">
                       <input
@@ -556,8 +792,18 @@ const UserManagement = () => {
                     </label>
                   </div>
                 </div>
+                {newUser.is_seller && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <input
+                      type="text"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={newUser.companyName}
+                      onChange={(e) => setNewUser({ ...newUser, companyName: e.target.value })}
+                    />
+                  </div>
+                )}
               </div>
-
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
@@ -579,38 +825,16 @@ const UserManagement = () => {
           </div>
         </div>
       )}
+
+      {deleteModal.show && (
+        <DeleteConfirmationModal
+          username={deleteModal.username || 'this user'}
+          onConfirm={() => deleteModal.userId && deleteUser(deleteModal.userId)}
+          onCancel={() => setDeleteModal({ show: false, userId: null, username: null })}
+        />
+      )}
     </div>
   );
 };
-
-// TableHeader component
-const TableHeader: React.FC<{
-  label: string;
-  sortKey: keyof UserProfile;
-  sortConfig: { key: string; direction: 'asc' | 'desc' };
-  onClick: (key: keyof UserProfile) => void;
-  className?: string;
-}> = ({ label, sortKey, sortConfig, onClick, className }) => (
-  <th
-    scope="col"
-    className={`px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${className || ''}`}
-    onClick={() => onClick(sortKey)}
-  >
-    <div className="flex items-center">
-      {label}
-      {sortConfig.key === sortKey ? (
-        sortConfig.direction === 'asc' ? (
-          <ChevronUp className="ml-1 h-4 w-4" />
-        ) : (
-          <ChevronDown className="ml-1 h-4 w-4" />
-        )
-      ) : (
-        <span className="ml-1 text-gray-300">
-          <ChevronUp className="h-4 w-4" />
-        </span>
-      )}
-    </div>
-  </th>
-);
 
 export default UserManagement;

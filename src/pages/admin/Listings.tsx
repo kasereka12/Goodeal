@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, Filter, ShoppingBag, Eye, Check, X, AlertCircle } from 'lucide-react';
+import { Search, Eye, Check, X, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { categories } from '../../lib/categories';
 
@@ -29,7 +29,7 @@ export default function Listings() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('pending');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export default function Listings() {
 
   // Check if user is admin
   useEffect(() => {
-    if (!user?.user_metadata?.role === 'admin') {
+    if (user?.user_metadata?.role !== 'admin') {
       navigate('/');
     }
   }, [user, navigate]);
@@ -65,15 +65,17 @@ export default function Listings() {
       }
     };
 
-    fetchListings();
-  }, []);
+    if (user?.user_metadata?.role === 'admin') {
+      fetchListings();
+    }
+  }, [user]);
 
   // Filter listings
   const filteredListings = listings.filter(listing => {
-    const matchesSearch = 
+    const matchesSearch =
       listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       listing.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
     const matchesStatus = selectedStatus === 'all' || listing.status === selectedStatus;
 
@@ -90,7 +92,6 @@ export default function Listings() {
 
       if (error) throw error;
 
-      // Update local state
       setListings(listings.map(listing =>
         listing.id === id ? { ...listing, status } : listing
       ));
@@ -98,7 +99,7 @@ export default function Listings() {
       setShowModal(false);
     } catch (err: any) {
       console.error('Error updating listing status:', err);
-      alert('Erreur lors de la mise à jour du statut');
+      setError('Erreur lors de la mise à jour du statut');
     }
   };
 
@@ -113,7 +114,7 @@ export default function Listings() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Annonces</h1>
+        <h1 className="text-2xl font-bold">Gestion des annonces</h1>
       </div>
 
       {error && (
@@ -162,123 +163,130 @@ export default function Listings() {
 
       {/* Listings Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Annonce
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Vendeur
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Prix
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Statut
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Vues
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredListings.map((listing) => (
-              <tr key={listing.id}>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      <img
-                        src={listing.images[0]}
-                        alt=""
-                        className="h-10 w-10 rounded-lg object-cover"
-                      />
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {listing.title}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {categories[listing.category]?.label}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {listing.user_data?.user_metadata?.display_name || 
-                     listing.user_data?.email.split('@')[0]}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {listing.user_data?.email}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {listing.price.toLocaleString()} MAD
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    listing.status === 'active' ? 'bg-green-100 text-green-800' :
-                    listing.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    listing.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {listing.status === 'active' ? 'Active' :
-                     listing.status === 'pending' ? 'En attente' :
-                     listing.status === 'rejected' ? 'Rejetée' :
-                     listing.status === 'sold' ? 'Vendue' : 'Archivée'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {listing.views}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(listing.created_at).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => navigate(`/listings/${listing.id}`)}
-                      className="text-gray-400 hover:text-gray-500"
-                      title="Voir l'annonce"
-                    >
-                      <Eye className="h-5 w-5" />
-                    </button>
-                    {listing.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => updateStatus(listing.id, 'active')}
-                          className="text-green-400 hover:text-green-500"
-                          title="Approuver"
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedListing(listing);
-                            setShowModal(true);
-                          }}
-                          className="text-red-400 hover:text-red-500"
-                          title="Rejeter"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Annonce
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vendeur
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Prix
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Statut
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vues
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredListings.map((listing) => (
+                <tr key={listing.id}>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 flex-shrink-0">
+                        {listing.images?.length > 0 ? (
+                          <img
+                            src={listing.images[0]}
+                            alt={listing.title}
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <ShoppingBag className="h-5 w-5 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900 line-clamp-1">
+                          {listing.title}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {categories[listing.category]?.label || 'Non catégorisé'}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 line-clamp-1">
+                      {listing.user_data?.user_metadata?.display_name ||
+                        listing.user_data?.email?.split('@')[0] || 'Anonyme'}
+                    </div>
+                    <div className="text-sm text-gray-500 line-clamp-1">
+                      {listing.user_data?.email || 'Email non disponible'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {listing.price?.toLocaleString() || '0'} MAD
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${listing.status === 'active' ? 'bg-green-100 text-green-800' :
+                      listing.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        listing.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                      }`}>
+                      {listing.status === 'active' ? 'Active' :
+                        listing.status === 'pending' ? 'En attente' :
+                          listing.status === 'rejected' ? 'Rejetée' :
+                            listing.status === 'sold' ? 'Vendue' : 'Archivée'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {listing.views || 0}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(listing.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => navigate(`/listings/${listing.id}`)}
+                        className="text-gray-400 hover:text-gray-500"
+                        title="Voir l'annonce"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                      {listing.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => updateStatus(listing.id, 'active')}
+                            className="text-green-400 hover:text-green-500"
+                            title="Approuver"
+                          >
+                            <Check className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedListing(listing);
+                              setShowModal(true);
+                            }}
+                            className="text-red-400 hover:text-red-500"
+                            title="Rejeter"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {filteredListings.length === 0 && (
           <div className="text-center py-12 text-gray-500">
