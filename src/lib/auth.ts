@@ -1,77 +1,104 @@
 import { supabase } from './supabase';
 
-// Types pour plus de clarté
-type AccountType = 'Particulier' | 'Professionnel' | string | null;
-type SignUpParams = {
+type SellerType = 'particular' | 'professional';
+// auth.ts
+export async function createUserAsAdmin(userData: {
   email: string;
   password: string;
   username: string;
-  accountType?: AccountType;
-  phone?: string | null;
-  whatsapp?: string | null;
-  isSeller?: boolean;
-};
-
-export async function signUp(email: string, password: string, username: string, accountType: 'Particulier' | 'Professionnel' | null, phone: string | null, whatsapp: string | null, isSeller: boolean) {
+  phone?: string;
+  is_seller?: boolean;
+  seller_type?: 'particular' | 'professional';
+  company_name?: string;
+}) {
   try {
-    console.log('Starting signUp with:', { email, username, isSeller });
-
-    if (!email || !password || !username) {
-      const missing = [];
-      if (!email) missing.push('email');
-      if (!password) missing.push('password');
-      if (!username) missing.push('username');
-      throw new Error(`Missing fields: ${missing.join(', ')}`);
+    if (userData.is_seller) {
+      if (!userData.seller_type) {
+        throw new Error('Seller type is required when creating a seller');
+      }
+      if (userData.seller_type === 'professional' && !userData.company_name) {
+        throw new Error('Company name is required for professional sellers');
+      }
     }
 
+    const { data, error } = await supabase.rpc('admin_create_user', {
+      email: userData.email,
+      password: userData.password,
+      username: userData.username,
+      phone: userData.phone || null,
+      is_seller: userData.is_seller || false,
+      seller_type: userData.is_seller ? userData.seller_type : null,
+      company_name: userData.is_seller ? userData.company_name : null,
+      email_confirm: false // Important pour ne pas confirmer automatiquement
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+export interface SignUpParams {
+  email: string;
+  password: string;
+  username: string;
+  wantsToSell?: boolean;
+  sellerType?: SellerType;
+  phone?: string;
+  whatsapp?: string;
+  companyName?: string;
+}
+
+export async function signUp({
+  email,
+  password,
+  username,
+  wantsToSell = false,
+  sellerType = 'particular',
+  phone = '',
+  whatsapp = '',
+  companyName = ''
+}: SignUpParams) {
+  try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           username,
-          account_type: isSeller ? accountType : null,
-          phone: isSeller ? phone : null,
-          whatsapp: isSeller ? whatsapp : null,
-          is_seller: isSeller
+          is_seller: wantsToSell,
+          seller_type: wantsToSell ? sellerType : null,
+          phone: wantsToSell ? phone : null,
+          whatsapp: wantsToSell ? whatsapp : null,
+          company_name: wantsToSell && sellerType === 'professional' ? companyName : null,
+          seller_approved: false
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`
       }
     });
 
-    console.log('Supabase response:', { data, error });
-
-    if (error) {
-      console.error('Supabase error details:', {
-        message: error.message,
-        code: error.code,
-        status: error.status
-      });
-      throw error;
-    }
-
-    if (!data.user) {
-      throw new Error('No user returned from signup');
-    }
-
-    return data.user;
+    if (error) throw error;
+    return {
+      user: data.user,
+      session: data.session,
+      isSeller: wantsToSell,
+      needsApproval: wantsToSell
+    };
   } catch (error: any) {
-    console.error('Full signup error:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      originalError: error.originalError
-    });
-    throw new Error(error.message || 'Signup failed. Please try again.');
+    throw new Error(error.message || 'Registration failed');
   }
 }
+
 export async function signIn(email: string, password: string) {
+  console.log('Attempting to sign in with email:', email);
   try {
     // Validation simple
     if (!email || !password) {
       throw new Error('Email and password are required');
     }
-
+    console.log('Attempting to sign in with email:', email);
+    console.log('Attempting to sign in with password:', password);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -102,15 +129,13 @@ export async function signIn(email: string, password: string) {
   }
 }
 
-// ... (les autres fonctions restent similaires)
 
 export async function signOut() {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   } catch (error: any) {
-    console.error('Logout error:', error);
-    throw new Error(error.message || 'An error occurred during logout. Please try again.');
+    throw new Error(error.message || 'Logout failed');
   }
 }
 
@@ -132,5 +157,3 @@ export async function updateUserProfile(displayName?: string, phoneNumber?: stri
     throw new Error(error.message || 'An error occurred while updating your profile. Please try again.');
   }
 }
-
-

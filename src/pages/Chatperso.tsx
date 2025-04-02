@@ -44,6 +44,7 @@ const Chatperso = () => {
     const [activeListingId, setActiveListingId] = useState<string | null>(urlListingId);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messageContainerRef = useRef<HTMLDivElement>(null);
     const lastListingIdRef = useRef<string | null>(urlListingId);
 
     // Fetch listing details
@@ -188,7 +189,7 @@ const Chatperso = () => {
             } finally {
                 setIsLoading(false);
                 setTimeout(() => {
-                    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+                    scrollToBottom();
                 }, 100);
             }
         };
@@ -200,9 +201,16 @@ const Chatperso = () => {
         };
     }, [userId, user?.user?.id, urlListingId]);
 
+    // Scroll to bottom function
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+        }
+    };
+
     // Auto-scroll to bottom when messages change
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        scrollToBottom();
     }, [messages]);
 
     // Handle WhatsApp click
@@ -255,46 +263,54 @@ const Chatperso = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <div className="flex items-center justify-center h-screen w-full">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-gray-50">
             {/* Header with listing info */}
-            <div className="flex items-center p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-                <button onClick={() => navigate(-1)} className="mr-2">
-                    <ChevronLeft className="h-5 w-5" />
+            <div className="flex items-center p-3 border-b border-gray-200 bg-white z-10">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="mr-3 p-1 rounded-full hover:bg-gray-100"
+                >
+                    <ChevronLeft className="h-5 w-5 text-gray-600" />
                 </button>
 
                 <div className="flex-1 min-w-0">
                     {listingDetails ? (
                         <>
-                            <h2 className="font-semibold truncate">{listingDetails.title}</h2>
-                            <p className="text-sm text-gray-500 truncate">
-                                {listingDetails.price} MAD
-                                {listingDetails.city && ` • ${listingDetails.city}`}
+                            <h2 className="font-semibold truncate text-gray-800">{listingDetails.title}</h2>
+                            <p className="text-sm text-gray-500 truncate flex items-center">
+                                <span className="font-medium text-blue-600">{listingDetails.price} MAD</span>
+                                {listingDetails.city && (
+                                    <span className="flex items-center ml-2">
+                                        <span className="mx-1 text-gray-400">•</span>
+                                        {listingDetails.city}
+                                    </span>
+                                )}
                             </p>
                         </>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <h2 className="font-semibold">
-                                Conversation avec {receiverProfile?.username || "l'utilisateur"}
-                            </h2>
                             {receiverProfile?.avatar_url && (
                                 <img
                                     src={receiverProfile.avatar_url}
                                     alt="Avatar"
-                                    className="w-6 h-6 rounded-full"
+                                    className="w-8 h-8 rounded-full border border-gray-200"
                                 />
                             )}
+                            <h2 className="font-semibold text-gray-800">
+                                Conversation avec {receiverProfile?.username || "l'utilisateur"}
+                            </h2>
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 ml-2">
+                <div className="flex items-center gap-1 ml-2">
                     {(receiverProfile?.phone || listingDetails?.phone) && (
                         <>
                             <button
@@ -317,12 +333,12 @@ const Chatperso = () => {
                     {listingDetails && (
                         <button
                             onClick={() => setShowListingDetails(!showListingDetails)}
-                            className="ml-2"
+                            className="ml-1 p-2 hover:bg-gray-100 rounded-full"
                         >
                             {showListingDetails ? (
-                                <ChevronUp className="h-5 w-5" />
+                                <ChevronUp className="h-5 w-5 text-gray-600" />
                             ) : (
-                                <ChevronDown className="h-5 w-5" />
+                                <ChevronDown className="h-5 w-5 text-gray-600" />
                             )}
                         </button>
                     )}
@@ -331,25 +347,27 @@ const Chatperso = () => {
 
             {/* Listing details toggle */}
             {showListingDetails && listingDetails && (
-                <div className="p-4 border-b bg-gray-50">
-                    <div className="flex gap-4">
+                <div className="p-3 border-b bg-white">
+                    <div className="flex gap-3">
                         {listingDetails.images?.[0] && (
                             <img
                                 src={listingDetails.images[0]}
                                 alt={listingDetails.title}
-                                className="w-16 h-16 rounded-lg object-cover"
+                                className="w-16 h-16 rounded-lg object-cover border border-gray-200"
                             />
                         )}
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold truncate">{listingDetails.title}</h3>
-                            <p className="text-primary font-bold">{listingDetails.price} MAD</p>
-                            <div className="flex items-center text-sm text-gray-500 mt-1">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                <span className="truncate">
-                                    {listingDetails.city}, {listingDetails.region}
-                                </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                            <h3 className="font-semibold truncate text-gray-800">{listingDetails.title}</h3>
+                            <p className="text-blue-600 font-bold">{listingDetails.price} MAD</p>
+                            {(listingDetails.city || listingDetails.region) && (
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                    <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                                    <span className="truncate">
+                                        {listingDetails.city}{listingDetails.region && `, ${listingDetails.region}`}
+                                    </span>
+                                </div>
+                            )}
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                                 {listingDetails.description}
                             </p>
                         </div>
@@ -358,7 +376,10 @@ const Chatperso = () => {
             )}
 
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div
+                ref={messageContainerRef}
+                className="flex-1 overflow-y-auto pb-4 px-3 scrollbar-thin scrollbar-thumb-gray-300"
+            >
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
                         <p className="text-gray-500 mb-4">
@@ -368,70 +389,76 @@ const Chatperso = () => {
                         </p>
                         {listingDetails && (
                             <div className="max-w-md w-full bg-white p-4 rounded-lg border border-gray-200">
-                                <h3 className="font-semibold">{listingDetails.title}</h3>
-                                <p className="text-primary font-bold">{listingDetails.price} MAD</p>
-                                <p className="text-sm text-gray-600 line-clamp-2">
+                                <h3 className="font-semibold text-gray-800">{listingDetails.title}</h3>
+                                <p className="text-blue-600 font-bold">{listingDetails.price} MAD</p>
+                                <p className="text-sm text-gray-600 line-clamp-2 mt-2">
                                     {listingDetails.description}
                                 </p>
                             </div>
                         )}
                     </div>
                 ) : (
-                    messages.map((message) => {
-                        if (message.isDivider) {
+                    <div className="pt-3 space-y-2">
+                        {messages.map((message) => {
+                            if (message.isDivider) {
+                                return (
+                                    <div key={message.id} className="flex justify-center my-3">
+                                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
+                                            <Info className="h-3 w-3 mr-1 flex-shrink-0" />
+                                            {message.text}
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            const isUserMessage = message.sender_id === user?.user?.id;
+
                             return (
-                                <div key={message.id} className="flex justify-center my-4">
-                                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
-                                        <Info className="h-3 w-3 mr-1" />
-                                        {message.text}
+                                <div
+                                    key={message.id}
+                                    className={`flex ${isUserMessage ? "justify-end" : "justify-start"}`}
+                                >
+                                    <div
+                                        className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${isUserMessage
+                                                ? "bg-blue-600 text-white rounded-br-sm"
+                                                : "bg-white border border-gray-200 rounded-bl-sm"
+                                            }`}
+                                    >
+                                        <p className="text-sm break-words leading-relaxed">{message.text}</p>
+                                        <p className={`text-xs mt-1 text-right ${isUserMessage
+                                                ? "text-blue-100"
+                                                : "text-gray-400"
+                                            }`}>
+                                            {new Date(message.created_at).toLocaleTimeString([], {
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
                                     </div>
                                 </div>
                             );
-                        }
-
-                        return (
-                            <div
-                                key={message.id}
-                                className={`flex ${message.sender_id === user?.user?.id ? "justify-end" : "justify-start"} mb-4`}
-                            >
-                                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender_id === user?.user?.id
-                                        ? "bg-blue-600 text-white rounded-br-none"
-                                        : "bg-white border border-gray-200 rounded-bl-none shadow-sm"
-                                    }`}>
-                                    <p className="text-sm break-words">{message.text}</p>
-                                    <p className={`text-xs mt-1 text-right ${message.sender_id === user?.user?.id
-                                            ? "text-blue-100"
-                                            : "text-gray-500"
-                                        }`}>
-                                        {new Date(message.created_at).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    })
+                        })}
+                        <div ref={messagesEndRef} />
+                    </div>
                 )}
-                <div ref={messagesEndRef} />
             </div>
 
             {/* Message input */}
-            <div className="bg-white p-4 border-t border-gray-200 sticky bottom-0">
+            <div className="bg-white border-t border-gray-200 px-3 py-2">
                 <div className="flex items-center">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                         placeholder="Écrire un message..."
                         disabled={isSending}
                     />
                     <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || isSending}
-                        className="ml-2 p-2 bg-blue-600 text-white rounded-full disabled:bg-gray-300 hover:bg-blue-700 transition-colors duration-200"
+                        className={`ml-2 p-2 ${!newMessage.trim() || isSending ? 'bg-gray-300' : 'bg-blue-600'} text-white rounded-full`}
                     >
                         <Send className="h-5 w-5" />
                     </button>

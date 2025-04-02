@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,21 +9,28 @@ const authSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'At least 6 characters'),
   username: z.string().min(3, 'At least 3 characters').optional(),
-  isSeller: z.boolean().optional(),
-  accountType: z.string().min(3, 'Required').optional(),
+  wantsToSell: z.boolean().default(false),
+  sellerType: z.enum(['particular', 'professional']).optional(),
   phone: z.string().optional(),
-  whatsapp: z.string().optional()
+  whatsapp: z.string().optional(),
+  companyName: z.string().optional()
 }).superRefine((data, ctx) => {
-  if (data.isSeller) {
-    if (!data.accountType) {
+  if (data.wantsToSell) {
+    if (!data.phone) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Account type is required for sellers",
-        path: ["accountType"]
+        message: "Phone number is required for sellers",
+        path: ["phone"]
+      });
+    }
+    if (data.sellerType === 'professional' && !data.companyName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Company name is required for professional sellers",
+        path: ["companyName"]
       });
     }
   }
-  return data;
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
@@ -31,14 +38,9 @@ type AuthFormData = z.infer<typeof authSchema>;
 export default function Auth() {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [authState, setAuthState] = useState<{
-    loading: boolean;
-    message: { text: string; type: 'success' | 'error' };
-    shouldRedirect: boolean;
-  }>({
+  const [status, setStatus] = useState({
     loading: false,
-    message: { text: '', type: 'success' },
-    shouldRedirect: false
+    message: { text: '', type: 'success' as 'success' | 'error' }
   });
 
   const {
@@ -50,106 +52,78 @@ export default function Auth() {
   } = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
     defaultValues: {
-      isSeller: false
+      wantsToSell: false
     }
   });
 
-  const isSeller = watch('isSeller');
-
-  useEffect(() => {
-    if (authState.shouldRedirect) {
-      const timer = setTimeout(() => {
-        setIsSignUp(false);
-        reset();
-        setAuthState({
-          loading: false,
-          message: { text: '', type: 'success' },
-          shouldRedirect: false
-        });
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [authState.shouldRedirect, reset]);
+  const wantsToSell = watch('wantsToSell');
+  const sellerType = watch('sellerType');
 
   const onSubmit = async (data: AuthFormData) => {
-    setAuthState({
-      loading: true,
-      message: { text: '', type: 'success' },
-      shouldRedirect: false
-    });
+    console.log('Form submitted', data);
+    setStatus({ loading: true, message: { text: '', type: 'success' } });
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(
-          data.email,
-          data.password,
-          data.username || '',
-          isSeller ? data.accountType || '' : null,
-          isSeller ? data.phone || '' : null,
-          isSeller ? data.whatsapp || '' : null,
-          isSeller
-        );
+        const result = await signUp({
+          email: data.email,
+          password: data.password,
+          username: data.username || '',
+          wantsToSell: data.wantsToSell,
+          sellerType: data.sellerType,
+          phone: data.phone,
+          whatsapp: data.whatsapp,
+          companyName: data.companyName
+        });
 
-        if (error) throw error;
-
-        setAuthState({
+        setStatus({
           loading: false,
           message: {
-            text: 'Registration successful! Please check your email to confirm your account. Redirecting to login...',
-            type: 'success'
-          },
-          shouldRedirect: true
+            text: result.isSeller
+              ? 'Registration successful! Your seller account is pending approval. Please verify your email.'
+              : 'Registration successful! Please verify your email.'
+          }
         });
+        
+        reset();
+        setIsSignUp(false);
       } else {
-        const { error } = await signIn(data.email, data.password);
-
-        if (error) throw error;
-
-        navigate('/', { replace: true });
+        await signIn(data.email, data.password);
+        navigate('/');
       }
-    } catch (err: any) {
-      setAuthState({
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      setStatus({
         loading: false,
         message: {
-          text: err.message || 'Authentication failed. Please try again.',
+          text: error.message || 'Authentication failed. Please try again.',
           type: 'error'
-        },
-        shouldRedirect: false
+        }
       });
-      console.error('Auth error:', err);
     }
   };
 
   const switchAuthMode = () => {
     setIsSignUp(!isSignUp);
     reset();
-    setAuthState({
-      loading: false,
-      message: { text: '', type: 'success' },
-      shouldRedirect: false
-    });
+    setStatus({ loading: false, message: { text: '', type: 'success' } });
   };
 
   return (
     <div className="max-w-md mx-auto mt-10 p-8 bg-white rounded-xl shadow-lg border border-gray-100">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-800">
-          {isSignUp ? 'Create Your Account' : 'Welcome Back'}
+          {isSignUp ? 'Create Account' : 'Sign In'}
         </h2>
-        <p className="text-gray-500 mt-2">
-          {isSignUp ? 'Join our community today' : 'Sign in to continue'}
-        </p>
       </div>
 
-      {authState.message.text && (
-        <div
-          className={`p-4 mb-6 rounded-lg ${authState.message.type === 'success'
-            ? 'bg-green-50 text-green-700 border border-green-200'
+      {status.message.text && (
+        <div className={`p-4 mb-6 rounded-lg ${
+          status.message.type === 'success' 
+            ? 'bg-green-50 text-green-700 border border-green-200' 
             : 'bg-red-50 text-red-700 border border-red-200'
-            }`}
-        >
-          {authState.message.text}
+        }`}>
+          {status.message.text}
         </div>
       )}
 
@@ -161,14 +135,13 @@ export default function Auth() {
           <input
             id="email"
             {...register('email')}
-            placeholder="your@email.com"
-            className={`w-full px-4 py-3 rounded-lg border ${errors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-              } focus:outline-none focus:ring-2`}
-            disabled={authState.loading}
+            type="email"
+            className={`w-full px-4 py-3 rounded-lg border ${
+              errors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            } focus:outline-none focus:ring-2`}
+            disabled={status.loading}
           />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-          )}
+          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -179,14 +152,12 @@ export default function Auth() {
             id="password"
             {...register('password')}
             type="password"
-            placeholder="••••••••"
-            className={`w-full px-4 py-3 rounded-lg border ${errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-              } focus:outline-none focus:ring-2`}
-            disabled={authState.loading}
+            className={`w-full px-4 py-3 rounded-lg border ${
+              errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            } focus:outline-none focus:ring-2`}
+            disabled={status.loading}
           />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-          )}
+          {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
         </div>
 
         {isSignUp && (
@@ -198,91 +169,117 @@ export default function Auth() {
               <input
                 id="username"
                 {...register('username')}
-                placeholder="john_doe"
-                className={`w-full px-4 py-3 rounded-lg border ${errors.username ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  } focus:outline-none focus:ring-2`}
-                disabled={authState.loading}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  errors.username ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                } focus:outline-none focus:ring-2`}
+                disabled={status.loading}
               />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
-              )}
+              {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>}
             </div>
 
             <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
               <input
                 type="checkbox"
-                {...register('isSeller')}
-                id="isSeller"
+                id="wantsToSell"
+                {...register('wantsToSell')}
                 className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                disabled={authState.loading}
+                disabled={status.loading}
               />
-              <label htmlFor="isSeller" className="text-sm font-medium text-gray-700">
+              <label htmlFor="wantsToSell" className="text-sm font-medium text-gray-700">
                 I want to register as a seller
               </label>
             </div>
 
-            {isSeller && (
-              <>
+            {wantsToSell && (
+              <div className="space-y-4 pl-4 border-l-2 border-gray-200">
                 <div>
-                  <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-1">
-                    Account Type
-                  </label>
-                  <select
-                    id="accountType"
-                    {...register('accountType')}
-                    className={`w-full px-4 py-3 rounded-lg border ${errors.accountType ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                      } focus:outline-none focus:ring-2 bg-white`}
-                    disabled={authState.loading}
-                  >
-                    <option value="">Select account type</option>
-                    <option value="Particulier">Particulier</option>
-                    <option value="Professionnel">Professionnel</option>
-                  </select>
-                  {errors.accountType && (
-                    <p className="mt-1 text-sm text-red-600">{errors.accountType.message}</p>
-                  )}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Seller Type</label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        {...register('sellerType')}
+                        value="particular"
+                        className="mr-2"
+                        disabled={status.loading}
+                      />
+                      Particulier
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        {...register('sellerType')}
+                        value="professional"
+                        className="mr-2"
+                        disabled={status.loading}
+                      />
+                      Professionnel
+                    </label>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      id="phone"
-                      {...register('phone')}
-                      placeholder="+33 6 12 34 56 78"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={authState.loading}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
-                      WhatsApp
-                    </label>
-                    <input
-                      id="whatsapp"
-                      {...register('whatsapp')}
-                      placeholder="+33 6 12 34 56 78"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={authState.loading}
-                    />
-                  </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone *
+                  </label>
+                  <input
+                    id="phone"
+                    {...register('phone')}
+                    className={`w-full px-4 py-3 rounded-lg border ${
+                      errors.phone ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    } focus:outline-none focus:ring-2`}
+                    disabled={status.loading}
+                  />
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
                 </div>
-              </>
+
+                <div>
+                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
+                    WhatsApp (optional)
+                  </label>
+                  <input
+                    id="whatsapp"
+                    {...register('whatsapp')}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={status.loading}
+                  />
+                </div>
+
+                {sellerType === 'professional' && (
+                  <div>
+                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Name *
+                    </label>
+                    <input
+                      id="companyName"
+                      {...register('companyName')}
+                      className={`w-full px-4 py-3 rounded-lg border ${
+                        errors.companyName ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      } focus:outline-none focus:ring-2`}
+                      disabled={status.loading}
+                    />
+                    {errors.companyName && <p className="mt-1 text-sm text-red-600">{errors.companyName.message}</p>}
+                  </div>
+                )}
+
+                <div className="bg-yellow-50 p-3 rounded-lg text-yellow-700 text-sm">
+                  Your seller account will need admin approval before you can start selling.
+                </div>
+              </div>
             )}
           </>
         )}
 
         <button
           type="submit"
-          disabled={authState.loading}
-          className={`w-full py-3 px-4 rounded-xl text-white font-medium ${authState.loading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 transition-colors'
-            } flex items-center justify-center`}
+          disabled={status.loading}
+          className={`w-full py-3 px-4 rounded-xl text-white font-medium ${
+            status.loading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 transition-colors'
+          } flex items-center justify-center`}
         >
-          {authState.loading ? (
+          {status.loading ? (
             <>
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -301,9 +298,10 @@ export default function Auth() {
       <div className="mt-6 text-center">
         <button
           onClick={switchAuthMode}
-          disabled={authState.loading}
-          className={`text-blue-600 hover:text-blue-800 font-medium ${authState.loading ? 'text-gray-400 cursor-not-allowed' : ''
-            }`}
+          disabled={status.loading}
+          className={`text-blue-600 hover:text-blue-800 font-medium ${
+            status.loading ? 'text-gray-400 cursor-not-allowed' : ''
+          }`}
         >
           {isSignUp
             ? 'Already have an account? Sign In'

@@ -1,21 +1,31 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, ShoppingBag, Flag, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Logo from '../Logo';
+import { signOut } from '../../lib/auth';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Listings', href: '/admin/listings', icon: ShoppingBag },
   { name: 'Reports', href: '/admin/reports', icon: Flag },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Settings', href: '/admin/setting', icon: Settings },
 ];
+
 
 export default function Sidebar() {
   const location = useLocation();
-  const { signOut } = useAuth();
 
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
   return (
     <div className="flex flex-col h-full bg-white border-r">
       {/* Logo */}
@@ -28,16 +38,15 @@ export default function Sidebar() {
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.href;
-          
+
           return (
             <Link
               key={item.name}
               to={item.href}
-              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${
-                isActive
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${isActive
+                ? 'bg-primary text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+                }`}
             >
               <Icon className="h-5 w-5" />
               {item.name}
@@ -49,10 +58,10 @@ export default function Sidebar() {
       {/* Logout button */}
       <div className="p-4 border-t">
         <button
-          onClick={() => signOut()}
+          onClick={() => handleSignOut()}
           className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg w-full"
         >
-          <LogOut className="h-5 w-5" />
+
           Logout
         </button>
       </div>

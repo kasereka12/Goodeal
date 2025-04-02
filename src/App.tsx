@@ -25,6 +25,8 @@ import ChatList from './pages/Chat';
 import Chatperso from './pages/Chatperso';
 import { ThemeProvider } from './contexts/ThemeContext';
 import FavoritesPage from './pages/Favoris';
+import ReportPage from './pages/Report';
+
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -56,6 +58,10 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="listings" element={<AdminListings />} />
+
+              <Route path="reports" element={<ReportPage />} />
+              <Route path="setting" element={<Settings />} />
+
             </Route>
 
             {/* Public routes */}
