@@ -1,153 +1,206 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin, Shield } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin, Shield, ArrowRight, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import Logo from './Logo';
 
 export default function Footer() {
   const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
+  const [activeNewsletter, setActiveNewsletter] = useState(false);
+  const [email, setEmail] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setActiveNewsletter(true);
+    // Simulation d'inscription
+    setTimeout(() => {
+      setActiveNewsletter(false);
+      setEmail('');
+    }, 2000);
+  };
 
   return (
-    <footer className="bg-white border-t">
-      <div className="container mx-auto px-4 py-12">
-        {/* Main grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+    <footer className="bg-gradient-to-b from-gray-50 to-white border-t">
+      <div className="container mx-auto px-4 pt-16 pb-8">
+
+
+        {/* Main grid with improved styling */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Logo and description */}
-          <div className="space-y-4">
-            <Logo />
-            <p className="text-gray-600 text-sm">
-              {t('footer.description')}
+          <div className="space-y-6">
+            <div className="transform hover:scale-105 transition-transform">
+              <Logo />
+            </div>
+            <p className="text-gray-600 leading-relaxed">
+              {t('footer.description', 'La première plateforme d\'annonces au Maroc. Trouvez tout ce dont vous avez besoin ou vendez facilement ce que vous n\'utilisez plus.')}
             </p>
-            {/* Social media */}
+            {/* Social media with hover effects */}
             <div className="flex gap-4">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
-                <Youtube className="h-5 w-5" />
-              </a>
+              {[
+                { Icon: Facebook, href: 'https://facebook.com', color: 'hover:text-blue-600' },
+                { Icon: Instagram, href: 'https://instagram.com', color: 'hover:text-pink-600' },
+                { Icon: Twitter, href: 'https://twitter.com', color: 'hover:text-blue-400' },
+                { Icon: Youtube, href: 'https://youtube.com', color: 'hover:text-red-600' }
+              ].map((social, index) => (
+                <a
+                  key={index}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`p-2.5 bg-gray-100 rounded-full text-gray-600 transition-all ${social.color} hover:bg-white hover:shadow-md`}
+                  aria-label={social.Icon.name}
+                >
+                  <social.Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Quick links */}
+          {/* Quick links with better hover effects */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">{t('footer.quickLinks')}</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/create-listing" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('footer.postListing')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/requests" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('footer.requests')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/safety" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('footer.safety')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/faq" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('footer.faq')}
-                </Link>
-              </li>
+            <h3 className="font-bold text-gray-900 mb-5 text-lg">{t('footer.quickLinks', 'Liens rapides')}</h3>
+            <ul className="space-y-3 pl-1">
+              {[
+                { to: '/create-listing', label: t('footer.postListing', 'Déposer une annonce') },
+                { to: '/requests', label: t('footer.requests', 'Demandes') },
+                { to: '/safety', label: t('footer.safety', 'Sécurité') },
+                { to: '/faq', label: t('footer.faq', 'FAQ') }
+              ].map((link, index) => (
+                <li key={index} className="transform transition-transform group">
+                  <Link to={link.to} className="text-gray-600 group-hover:text-blue-600 transition-colors flex items-center">
+                    <ArrowRight className="h-4 w-4 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Categories */}
+          {/* Categories with icons */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">{t('footer.categories')}</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/category/immobilier" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('categories.realEstate')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/vehicules" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('categories.vehicles')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/electronique" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('categories.electronics')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/services" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('categories.services')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/artisanat" className="text-gray-600 hover:text-primary transition-colors">
-                  {t('categories.artisanat')}
-                </Link>
-              </li>
+            <h3 className="font-bold text-gray-900 mb-5 text-lg">{t('footer.categories', 'Catégories')}</h3>
+            <ul className="space-y-3 pl-1">
+              {[
+                { to: '/category/immobilier', label: t('categories.realEstate', 'Immobilier') },
+                { to: '/category/vehicules', label: t('categories.vehicles', 'Véhicules') },
+                { to: '/category/electronique', label: t('categories.electronics', 'Électronique') },
+                { to: '/category/services', label: t('categories.services', 'Services') },
+                { to: '/category/artisanat', label: t('categories.artisanat', 'Artisanat') }
+              ].map((category, index) => (
+                <li key={index} className="transform transition-transform group">
+                  <Link to={category.to} className="text-gray-600 group-hover:text-blue-600 transition-colors flex items-center">
+                    <ArrowRight className="h-4 w-4 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="group-hover:translate-x-1 transition-transform">{category.label}</span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Contact with improved styling */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">{t('footer.contact')}</h3>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-2 text-gray-600">
-                <Mail className="h-5 w-5 text-primary" />
-                <a href="mailto:contact@goodeaal.com" className="hover:text-primary transition-colors">
+            <h3 className="font-bold text-gray-900 mb-5 text-lg">{t('footer.contact', 'Contact')}</h3>
+            <ul className="space-y-5">
+              <li className="flex items-center gap-3 group">
+                <div className="p-2 bg-blue-100 rounded-full text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <a href="mailto:contact@goodeaal.com" className="text-gray-600 group-hover:text-blue-600 transition-colors">
                   contact@goodeaal.com
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-gray-600">
-                <Phone className="h-5 w-5 text-primary" />
-                <a href="tel:+212500000000" className="hover:text-primary transition-colors">
+              <li className="flex items-center gap-3 group">
+                <div className="p-2 bg-blue-100 rounded-full text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <Phone className="h-4 w-4" />
+                </div>
+                <a href="tel:+212500000000" className="text-gray-600 group-hover:text-blue-600 transition-colors">
                   +212 5 00 00 00 00
                 </a>
               </li>
-              <li className="flex items-start gap-2 text-gray-600">
-                <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
-                <address className="not-italic">
-                  {t('footer.address')}
+              <li className="flex items-start gap-3 group">
+                <div className="p-2 bg-blue-100 rounded-full text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all flex-shrink-0 mt-1">
+                  <MapPin className="h-4 w-4" />
+                </div>
+                <address className="not-italic text-gray-600 group-hover:text-gray-800 transition-colors">
+                  {t('footer.address', '123 Boulevard Mohammed V, Casablanca, Maroc')}
                 </address>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Separator */}
-        <div className="border-t border-gray-200 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            {/* Copyright */}
-            <p className="text-gray-600 text-sm text-center md:text-left">
-              {t('footer.copyright').replace('{year}', currentYear.toString())}
-            </p>
-            
-            {/* Legal links and admin */}
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <Link to="/privacy" className="text-gray-600 hover:text-primary transition-colors">
-                {t('footer.legal.privacy')}
-              </Link>
-              <Link to="/terms" className="text-gray-600 hover:text-primary transition-colors">
-                {t('footer.legal.terms')}
-              </Link>
-              <Link to="/legal" className="text-gray-600 hover:text-primary transition-colors">
-                {t('footer.legal.legal')}
-              </Link>
-              <Link 
-                to="/admin" 
-                className="flex items-center gap-1 text-gray-600 hover:text-primary transition-colors"
-              >
-                <Shield className="h-4 w-4" />
-                {t('footer.legal.admin')}
-              </Link>
+        {/* Bottom area with app links */}
+        <div className="mb-8 py-6 border-y border-gray-200">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="font-medium text-gray-800 mb-2 text-center md:text-left">
+                {t('footer.downloadApp', 'Téléchargez notre application')}
+              </p>
+              <p className="text-gray-600 text-sm text-center md:text-left">
+                {t('footer.appPromo', 'Accédez à GoodDeal où que vous soyez')}
+              </p>
             </div>
+
+            <div className="flex gap-4">
+              <a
+                href="#"
+                className="transition-transform hover:scale-105 hover:shadow-md rounded-xl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src="https://eczqxyibzosgaktrmozt.supabase.co/storage/v1/object/public/assets/app-store-badge.svg"
+                  alt="App Store"
+                  className="h-10"
+                />
+              </a>
+              <a
+                href="#"
+                className="transition-transform hover:scale-105 hover:shadow-md rounded-xl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src="https://eczqxyibzosgaktrmozt.supabase.co/storage/v1/object/public/assets/google-play-badge.svg"
+                  alt="Google Play"
+                  className="h-10"
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Copyright and links */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          {/* Copyright */}
+          <p className="text-gray-500 text-sm">
+            &copy; {currentYear} GoodDeal. {t('footer.copyright', 'Tous droits réservés.')}
+          </p>
+
+          {/* Legal links with dividers */}
+          <div className="flex flex-wrap justify-center gap-6 text-sm">
+            {[
+              { to: '/privacy', label: t('footer.legal.privacy', 'Politique de confidentialité') },
+              { to: '/terms', label: t('footer.legal.terms', 'Conditions d\'utilisation') },
+              { to: '/legal', label: t('footer.legal.legal', 'Mentions légales') }
+            ].map((link, index) => (
+              <Link
+                key={index}
+                to={link.to}
+                className="text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            <Link
+              to="/admin"
+              className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+            >
+              <Shield className="h-4 w-4" />
+              {t('footer.legal.admin', 'Administration')}
+            </Link>
           </div>
         </div>
       </div>

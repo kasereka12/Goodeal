@@ -27,7 +27,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import FavoritesPage from './pages/Favoris';
 import ReportPage from './pages/Report';
 import ProfilesUsers from './pages/admin/ProfilesUsers';
-
+import Listingdetails from './pages/admin/Listingdetails';
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -64,6 +64,7 @@ function App() {
               <Route path="setting" element={<Settings />} />
               <Route path="chatList" element={<ChatList />} />
               <Route path="profils/:id" element={<ProfilesUsers />} />
+              <Route path="listings/:id" element={<Listingdetails />} />
 
             </Route>
 

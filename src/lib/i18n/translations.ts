@@ -29,184 +29,165 @@ export const translations = {
       newest: 'Plus récent',
       oldest: 'Plus ancien',
       priceAsc: 'Prix croissant',
-      priceDesc: 'Prix décroissant'
+      priceDesc: 'Prix décroissant',
+      previous: 'Précédent',
+      close: 'Fermer',
+      reset: 'Réinitialiser'
+    },
+    search: {
+      placeholder: 'Que recherchez-vous ?',
+    },
+    nav: {
+      home: 'Accueil',
+      search: 'Rechercher',
+      postListing: 'Déposer une annonce',
+      chat: 'Messagerie',
+      profile: 'Mon profil',
+      favorites: 'Favoris',
+      settings: 'Paramètres',
+      logout: 'Déconnexion',
+      notifications: 'Notifications'
     },
     home: {
-      hero: {
-        title: 'Trouvez ce que vous cherchez sur Goodeaal',
-        subtitle: 'Des milliers d\'annonces à portée de main'
-      },
+      heroTitle: 'Trouvez ce qui vous',
+      heroHighlight: 'correspond',
+      heroSubtitle: 'Des milliers d\'annonces à travers tout le Maroc, prêtes à être découvertes',
+      popularTags: 'Populaires',
+      categoriesTitle: 'Explorer par catégorie',
+      popularCities: 'Villes populaires',
       sections: {
         latestListings: 'Dernières annonces',
         realEstate: 'Immobilier',
-        vehicles: 'Auto-moto & Engins',
+        vehicles: 'Véhicules',
         services: 'Services',
-        crafts: 'Déco & Artisanat'
-      },
-      urbanFive: {
-        title: 'Urbain Five, votre complexe sportif à Marrakech',
-        subtitle: 'Découvrez nos installations modernes et nos coachs professionnels',
-        cta: 'Visiter le site'
+        artisanat: 'Artisanat'
       }
     },
-    auth: {
-      signIn: 'Se connecter',
-      signUp: 'S\'inscrire',
-      email: 'Email',
-      password: 'Mot de passe',
-      forgotPassword: 'Mot de passe oublié ?',
-      alreadyHaveAccount: 'Déjà un compte ?',
-      noAccount: 'Pas encore de compte ?',
-      logout: 'Se déconnecter',
-      profile: 'Profil',
-      editProfile: 'Modifier le profil',
-      changePassword: 'Changer le mot de passe',
-      deleteAccount: 'Supprimer le compte',
-      signUpSuccess: 'Inscription réussie ! Vous pouvez maintenant vous connecter.',
-      errors: {
-        notAuthenticated: 'Vous devez être connecté pour effectuer cette action.'
+    listing: {
+      sponsored: 'Sponsorisé',
+      recent: 'Annonces récentes',
+      noResults: 'Aucune annonce trouvée',
+      tryDifferentFilters: 'Essayez de modifier vos critères de recherche',
+      forRent: 'À louer',
+      forSale: 'À vendre',
+      perMonth: 'mois',
+      views: 'vues',
+      favorites: 'favoris',
+      photos: 'photos',
+      notFound: "Cette annonce n'existe pas ou a été supprimée",
+      description: "Description",
+      characteristics: "Caractéristiques",
+      location: "Localisation",
+      published: "Publié le",
+      views: "vues",
+      favorites: "favoris",
+      photos: "photos",
+      forRent: "Location",
+      forSale: "Vente",
+      perMonth: "/mois",
+      safety: {
+        title: "Conseils de sécurité",
+        tip1: "Ne payez jamais d'avance sans voir l'article",
+        tip2: "Rencontrez le vendeur dans un lieu public",
+        tip3: "Vérifiez le produit avant de l'acheter",
+        tip4: "Méfiez-vous des prix trop bas",
+        learnMore: "En savoir plus sur la sécurité"
       }
     },
-    nav: {
-      postListing: 'Déposer une annonce',
-      requests: 'Demandes',
-      profile: 'Profil',
-      logout: 'Se déconnecter',
-      messages: 'Messages',
-      notifications: 'Notifications',
-      settings: 'Paramètres'
+    urbainFive: {
+      title: 'Découvrez Urbain',
+      description: 'Votre salle de sport premium en plein cœur de la ville. Equipements de dernière génération et cours exclusifs.',
+      cta: 'Visiter le site'
     },
-    settings: {
-      title: 'Paramètres',
-      account: 'Compte',
-      notifications: 'Notifications',
-      security: 'Sécurité',
-      appearance: 'Apparence',
-      deleteAccount: 'Supprimer le compte',
-      confirmDelete: 'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
-      deleting: 'Suppression en cours...',
-      deleteError: 'Erreur lors de la suppression',
-      email: 'Adresse email',
-      language: 'Langue',
-      signOut: 'Déconnexion',
-      emailNotifications: 'Notifications par email',
-      emailNotificationsDesc: 'Recevoir des notifications par email',
-      pushNotifications: 'Notifications push',
-      pushNotificationsDesc: 'Recevoir des notifications sur l\'appareil',
-      changePassword: 'Changer le mot de passe',
-      sendResetLink: 'Envoyer un lien de réinitialisation',
-      resetEmailSent: 'Email de réinitialisation envoyé',
-      resetError: 'Erreur lors de l\'envoi',
-      sessions: 'Sessions actives',
-      sessionsDesc: 'Gérez les appareils connectés à votre compte',
-      viewSessions: 'Voir les sessions',
-      darkMode: 'Mode sombre',
-      darkModeDesc: 'Activer l\'interface sombre',
-      saveChanges: 'Enregistrer les modifications',
-      saving: 'Enregistrement...',
-      saveSuccess: 'Préférences enregistrées',
-      saveError: 'Erreur lors de l\'enregistrement',
-      loadError: 'Erreur de chargement'
-    }
-    ,
-    listings: {
-      create: 'Créer une annonce',
-      edit: 'Modifier l\'annonce',
-      delete: 'Supprimer l\'annonce',
-      title: 'Titre',
-      description: 'Description',
-      price: 'Prix',
-      category: 'Catégorie',
-      location: 'Localisation',
-      images: 'Images',
-      contact: 'Contacter le vendeur',
-      report: 'Signaler l\'annonce',
-      share: 'Partager',
-      favorite: 'Favoris',
-      views: 'Vues',
-      postedOn: 'Publié le',
-      by: 'par',
-      transactionType: 'Type de transaction',
-      buy: 'Achat',
-      rent: 'Location'
-    },
-    requests: {
-      title: 'Demandes',
-      create: 'Créer une demande',
-      searchPlaceholder: 'Rechercher une demande...',
-      noResults: 'Aucune demande ne correspond à votre recherche',
-      empty: 'Aucune demande pour le moment',
-      urgency: {
-        label: 'Urgence',
-        high: 'Urgent',
-        medium: 'Normal',
-        low: 'Non urgent'
-      },
-      status: {
-        active: 'Active',
-        closed: 'Fermée',
-        expired: 'Expirée'
-      }
-    },
-    categories: {
-      realEstate: 'Immobilier',
-      vehicles: 'Auto-moto & Engins',
-      services: 'Services',
-      furniture: 'Mobilier',
-      fashion: 'Mode',
-      books: 'Livres',
-      sports: 'Sports',
-      games: 'Jeux',
-      artisanat: 'Déco & Artisanat',
-      other: 'Autre'
+    city: {
+      viewListings: 'Voir les annonces'
     },
     filters: {
-      title: 'Filtres',
-      reset: 'Réinitialiser les filtres',
-      sort: {
-        title: 'Trier par',
-        date: 'Date',
-        price: 'Prix',
-        relevance: 'Pertinence'
-      },
-      transactionType: {
-        title: 'Type de transaction',
-        buy: 'Achat',
-        rent: 'Location'
-      }
+      title: 'Filtres avancés',
+      category: 'Catégorie',
+      city: 'Ville',
+      priceRange: 'Fourchette de prix (MAD)',
+      minPrice: 'Minimum',
+      maxPrice: 'Maximum',
+      transactionType: 'Type de transaction',
+      rent: 'Location',
+      sale: 'Achat',
+      allCities: 'Toutes les villes',
+      applyFilters: 'Appliquer les filtres'
     },
-    profile: {
-      title: 'Mon profil',
-      displayName: 'Nom de profil',
-      displayNamePlaceholder: 'Entrez votre nom de profil',
-      noDisplayName: 'Aucun nom de profil',
-      photo: 'Photo de profil',
-      photoUploadHint: 'Cliquez sur l\'icône pour télécharger une photo',
-      photoUploadFormats: 'Formats acceptés: JPG, PNG, GIF (max 5MB)',
-      errors: {
-        fileSize: 'La taille du fichier ne doit pas dépasser 5MB',
-        fileType: 'Formats acceptés: JPG, PNG ou GIF',
-        uploadFailed: 'Échec du téléchargement. Veuillez réessayer.'
-      }
+    actions: {
+      seeMore: 'Voir plus',
+      resetFilters: 'Réinitialiser les filtres',
+      search: 'Rechercher'
+    },
+    date: {
+      today: 'Aujourd\'hui',
+      yesterday: 'Hier',
+      daysAgo: 'Il y a {count} jours'
+    },
+    categories: {
+      immobilier: 'Immobilier',
+      vehicules: 'Véhicules',
+      services: 'Services',
+      artisanat: 'Artisanat',
+      realEstate: 'Immobilier',
+      vehicles: 'Véhicules',
+      electronics: 'Électronique',
+    }
+    ,
+
+    seller: {
+      memberSince: "Membre depuis",
+      contact: "Contacter le vendeur",
+      viewProfile: "Voir le profil"
+    },
+
+    actions: {
+      backToHome: "Retour à l'accueil",
+      save: "Sauvegarder",
+      saved: "Sauvegardé",
+      copyLink: "Copier le lien"
+    },
+
+    share: {
+      copied: "Lien copié !"
+    },
+
+    general: {
+      yes: "Oui",
+      no: "Non"
+    },
+
+    breadcrumb: {
+      home: "Accueil"
+    },
+    // Ajout des traductions manquantes pour les tags populaires
+    tags: {
+      appartements: 'Appartements',
+      voitures: 'Voitures',
+      cours: 'Cours',
+      mobilier: 'Mobilier'
     },
     footer: {
-      description: 'Goodeaal est la première plateforme de petites annonces au Maroc. Trouvez ou vendez ce que vous voulez, où que vous soyez.',
-      quickLinks: 'Liens rapides',
-      postListing: 'Déposer une annonce',
-      requests: 'Demandes',
-      safety: 'Conseils de sécurité',
-      faq: 'FAQ',
-      categories: 'Catégories',
-      contact: 'Contact',
-      address: 'Twin Center, Tour Ouest,\nAngle Bd Zerktouni et Al Massira,\n20100 Casablanca, Maroc',
-      copyright: '© {year} Goodeaal. Tous droits réservés.',
+      description: "La première plateforme d'annonces au Maroc. Trouvez tout ce dont vous avez besoin ou vendez facilement ce que vous n'utilisez plus.",
+      quickLinks: "Liens rapides",
+      postListing: "Déposer une annonce",
+      requests: "Demandes",
+      safety: "Sécurité",
+      faq: "FAQ",
+      categories: "Catégories",
+      contact: "Contact",
+      address: "123 Boulevard Mohammed V, Casablanca, Maroc",
+      downloadApp: "Téléchargez notre application",
+      appPromo: "Accédez à GoodDeal où que vous soyez",
+      copyright: "Tous droits réservés.",
       legal: {
-        privacy: 'Politique de confidentialité',
-        terms: 'Conditions d\'utilisation',
-        legal: 'Mentions légales',
-        admin: 'Admin'
+        privacy: "Politique de confidentialité",
+        terms: "Conditions d'utilisation",
+        legal: "Mentions légales",
+        admin: "Administration"
       }
-    }
+    },
   },
   en: {
     common: {
@@ -236,197 +217,179 @@ export const translations = {
       newest: 'Newest',
       oldest: 'Oldest',
       priceAsc: 'Price: low to high',
-      priceDesc: 'Price: high to low'
+      priceDesc: 'Price: high to low',
+      previous: 'Previous',
+      close: 'Close',
+      reset: 'Reset'
+    },
+    search: {
+      placeholder: 'what are you looking for ?',
+    },
+    nav: {
+      home: 'Accueil',
+      search: 'Rechercher',
+      postListing: 'Déposer une annonce',
+      chat: 'Messagerie',
+      profile: 'Mon profil',
+      favorites: 'Favoris',
+      settings: 'Paramètres',
+      logout: 'Déconnexion',
+      notifications: 'Notifications'
     },
     home: {
-      hero: {
-        title: 'Find what you are looking for on Goodeaal',
-        subtitle: 'Thousands of listings at your fingertips'
-      },
+      heroTitle: 'Find what',
+      heroHighlight: 'suits you',
+      heroSubtitle: 'Thousands of listings across Morocco, ready to be discovered',
+      popularTags: 'Popular',
+      categoriesTitle: 'Explore by category',
+      popularCities: 'Popular cities',
       sections: {
         latestListings: 'Latest listings',
         realEstate: 'Real Estate',
-        vehicles: 'Cars & Vehicles',
+        vehicles: 'Vehicles',
         services: 'Services',
-        crafts: 'Decor & Crafts'
-      },
-      urbanFive: {
-        title: 'Urbain Five, your sports complex in Marrakech',
-        subtitle: 'Discover our modern facilities and professional coaches',
-        cta: 'Visit website'
+        artisanat: 'Crafts'
       }
     },
-    auth: {
-      signIn: 'Sign in',
-      signUp: 'Sign up',
-      email: 'Email',
-      password: 'Password',
-      forgotPassword: 'Forgot password?',
-      alreadyHaveAccount: 'Already have an account?',
-      noAccount: 'Don\'t have an account?',
-      logout: 'Log out',
-      profile: 'Profile',
-      editProfile: 'Edit profile',
-      changePassword: 'Change password',
-      deleteAccount: 'Delete account',
-      signUpSuccess: 'Sign up successful! You can now sign in.',
-      errors: {
-        notAuthenticated: 'You must be logged in to perform this action.'
+    listing: {
+      sponsored: 'Sponsored',
+      recent: 'Recent listings',
+      noResults: 'No listings found',
+      tryDifferentFilters: 'Try different search criteria',
+      forRent: 'For rent',
+      forSale: 'For sale',
+      perMonth: 'month',
+      views: 'views',
+      favorites: 'favorites',
+      photos: 'photos',
+      notFound: "Cette annonce n'existe pas ou a été supprimée",
+      description: "Description",
+      characteristics: "Caractéristiques",
+      location: "Localisation",
+      published: "Publié le",
+      views: "vues",
+      favorites: "favoris",
+      photos: "photos",
+      forRent: "Location",
+      forSale: "Vente",
+      perMonth: "/mois",
+      safety: {
+        title: "Conseils de sécurité",
+        tip1: "Ne payez jamais d'avance sans voir l'article",
+        tip2: "Rencontrez le vendeur dans un lieu public",
+        tip3: "Vérifiez le produit avant de l'acheter",
+        tip4: "Méfiez-vous des prix trop bas",
+        learnMore: "En savoir plus sur la sécurité"
       }
     },
-    nav: {
-      postListing: 'Post a listing',
-      requests: 'Requests',
-      profile: 'Profile',
-      logout: 'Log out',
-      messages: 'Messages',
-      notifications: 'Notifications',
-      settings: 'Settings'
-    },
-    listings: {
-      create: 'Create listing',
-      edit: 'Edit listing',
-      delete: 'Delete listing',
-      title: 'Title',
-      description: 'Description',
-      price: 'Price',
-      category: 'Category',
-      location: 'Location',
-      images: 'Images',
-      contact: 'Contact seller',
-      report: 'Report listing',
-      share: 'Share',
-      favorite: 'Favorite',
-      views: 'Views',
-      postedOn: 'Posted on',
-      by: 'by',
-      transactionType: 'Transaction type',
-      buy: 'Buy',
-      rent: 'Rent'
-    },
-    requests: {
-      title: 'Requests',
-      create: 'Create request',
-      searchPlaceholder: 'Search requests...',
-      noResults: 'No requests match your search',
-      empty: 'No requests yet',
-      urgency: {
-        label: 'Urgency',
-        high: 'Urgent',
-        medium: 'Normal',
-        low: 'Not urgent'
-      },
-      status: {
-        active: 'Active',
-        closed: 'Closed',
-        expired: 'Expired'
-      }
-    },
-    // Ajoutez cette section dans vos traductions existantes
 
-    categories: {
-      realEstate: 'Real Estate',
-      vehicles: 'Cars & Vehicles',
-      services: 'Services',
-      furniture: 'Furniture',
-      fashion: 'Fashion',
-      books: 'Books',
-      sports: 'Sports',
-      games: 'Games',
-      artisanat: 'Decor & Crafts',
-      other: 'Other'
+    seller: {
+      memberSince: "Membre depuis",
+      contact: "Contacter le vendeur",
+      viewProfile: "Voir le profil"
+    },
+
+    actions: {
+      backToHome: "Retour à l'accueil",
+      save: "Sauvegarder",
+      saved: "Sauvegardé",
+      copyLink: "Copier le lien"
+    },
+
+    share: {
+      copied: "Lien copié !"
+    },
+
+    general: {
+      yes: "Oui",
+      no: "Non"
+    },
+
+    breadcrumb: {
+      home: "Accueil"
+    },
+    urbainFive: {
+      title: 'Discover Urbain',
+      description: 'Your premium gym in the heart of the city. State-of-the-art equipment and exclusive classes.',
+      cta: 'Visit website'
+    },
+    city: {
+      viewListings: 'View listings'
     },
     filters: {
-      title: 'Filters',
-      reset: 'Reset filters',
-      sort: {
-        title: 'Sort by',
-        date: 'Date',
-        price: 'Price',
-        relevance: 'Relevance'
-      },
-      transactionType: {
-        title: 'Transaction type',
-        buy: 'Buy',
-        rent: 'Rent'
-      }
+      title: 'Advanced filters',
+      category: 'Category',
+      city: 'City',
+      priceRange: 'Price range (MAD)',
+      minPrice: 'Minimum',
+      maxPrice: 'Maximum',
+      transactionType: 'Transaction type',
+      rent: 'Rent',
+      sale: 'Sale',
+      allCities: 'All cities',
+      applyFilters: 'Apply filters'
     },
-    favorites: {
-      title: "Vos favoris",
-      subtitle: "Vous avez {count} annonce(s) en favori(s)",
-      emptyTitle: "Aucun favori pour le moment",
-      emptyDescription: "Les annonces que vous aimez apparaîtront ici.",
-      browseListings: "Parcourir les annonces",
-      remove: "Retirer des favoris",
-      fetchError: "Erreur lors du chargement des favoris",
-      removeError: "Erreur lors de la suppression",
-      authRequired: "Connectez-vous pour voir vos favoris",
-      authDescription: "Vous devez être connecté pour accéder à vos annonces favorites."
-
+    actions: {
+      seeMore: 'See more',
+      resetFilters: 'Reset filters',
+      search: 'Search'
     },
-    profile: {
-      title: 'My profile',
-      displayName: 'Display name',
-      displayNamePlaceholder: 'Enter your display name',
-      noDisplayName: 'No display name',
-      photo: 'Profile photo',
-      photoUploadHint: 'Click the icon to upload a photo',
-      photoUploadFormats: 'Accepted formats: JPG, PNG, GIF (max 5MB)',
-      errors: {
-        fileSize: 'File size must not exceed 5MB',
-        fileType: 'Accepted formats: JPG, PNG or GIF',
-        uploadFailed: 'Upload failed. Please try again.'
-      }
-    }, settings: {
-      title: 'Settings',
-      account: 'Account',
-      notifications: 'Notifications',
-      security: 'Security',
-      appearance: 'Appearance',
-      deleteAccount: 'Delete Account',
-      confirmDelete: 'Are you sure you want to delete your account? This action cannot be undone.',
-      deleting: 'Deleting...',
-      deleteError: 'Error deleting account',
-      email: 'Email address',
-      language: 'Language',
-      signOut: 'Sign Out',
-      emailNotifications: 'Email Notifications',
-      emailNotificationsDesc: 'Receive email notifications',
-      pushNotifications: 'Push Notifications',
-      pushNotificationsDesc: 'Receive device notifications',
-      changePassword: 'Change Password',
-      sendResetLink: 'Send Reset Link',
-      resetEmailSent: 'Reset email sent',
-      resetError: 'Error sending reset email',
-      sessions: 'Active Sessions',
-      sessionsDesc: 'Manage devices connected to your account',
-      viewSessions: 'View Sessions',
-      darkMode: 'Dark Mode',
-      darkModeDesc: 'Enable dark interface',
-      saveChanges: 'Save Changes',
-      saving: 'Saving...',
-      saveSuccess: 'Preferences saved',
-      saveError: 'Error saving preferences',
-      loadError: 'Loading error'
+    date: {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      daysAgo: '{count} days ago'
+    },
+    categories: {
+      immobilier: 'Real Estate',
+      vehicules: 'Vehicles',
+      services: 'Services',
+      artisanat: 'Crafts',
+      realEstate: 'Immobilier',
+      vehicles: 'Véhicules',
+      electronics: 'Électronique',
+    },
+    // Added missing translations for popular tags
+    tags: {
+      appartements: 'Apartments',
+      voitures: 'Cars',
+      cours: 'Courses',
+      mobilier: 'Furniture'
     },
     footer: {
-      description: 'Goodeaal is the premier classifieds platform in Morocco. Find or sell whatever you want, wherever you are.',
-      quickLinks: 'Quick links',
-      postListing: 'Post a listing',
-      requests: 'Requests',
-      safety: 'Safety tips',
-      faq: 'FAQ',
-      categories: 'Categories',
-      contact: 'Contact',
-      address: 'Twin Center, West Tower,\nCorner of Zerktouni Blvd and Al Massira,\n20100 Casablanca, Morocco',
-      copyright: '© {year} Goodeaal. All rights reserved.',
+      description: "La première plateforme d'annonces au Maroc. Trouvez tout ce dont vous avez besoin ou vendez facilement ce que vous n'utilisez plus.",
+      quickLinks: "Liens rapides",
+      postListing: "Déposer une annonce",
+      requests: "Demandes",
+      safety: "Sécurité",
+      faq: "FAQ",
+      categories: "Catégories",
+      contact: "Contact",
+      address: "123 Boulevard Mohammed V, Casablanca, Maroc",
+      downloadApp: "Téléchargez notre application",
+      appPromo: "Accédez à GoodDeal où que vous soyez",
+      copyright: "Tous droits réservés.",
       legal: {
-        privacy: 'Privacy policy',
-        terms: 'Terms of use',
-        legal: 'Legal notice',
-        admin: 'Admin'
+        privacy: "Politique de confidentialité",
+        terms: "Conditions d'utilisation",
+        legal: "Mentions légales",
+        admin: "Administration"
       }
-
-    }
+    },
   }
 } as const;
+
+// Interface pour le type des traductions
+export type TranslationKey = {
+  [K in keyof typeof translations.fr]: typeof translations.fr[K] extends object
+  ? { [P in keyof typeof translations.fr[K]]: string }
+  : string
+};
+
+// Helper type pour les clés imbriquées
+type NestedKeyOf<ObjectType extends object> = {
+  [Key in keyof ObjectType]: ObjectType[Key] extends object
+  ? `${string & Key}.${string & NestedKeyOf<ObjectType[Key]>}`
+  : Key
+}[keyof ObjectType];
+
+export type TranslationPath = NestedKeyOf<typeof translations.fr>;

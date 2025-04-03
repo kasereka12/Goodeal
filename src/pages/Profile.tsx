@@ -34,7 +34,6 @@ export default function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Chargement du profil
   useEffect(() => {
     const loadProfile = async () => {
       if (!user?.id) return;
@@ -81,7 +80,6 @@ export default function Profile() {
     setSuccess(null);
 
     try {
-      // Validation pour les vendeurs
       if (profile.is_seller) {
         if (!profile.phone) throw new Error("Un numéro de téléphone est requis pour les vendeurs");
         if (profile.seller_type === 'professional' && !profile.company_name) {
@@ -91,10 +89,11 @@ export default function Profile() {
 
       const { error } = await supabase
         .from('profiles')
-        .upsert({
+        .update({
           ...profile,
           updated_at: new Date(),
-          seller_approved: profile.is_seller ? profile.seller_approved : false
+          seller_approved: profile.is_seller ? profile.seller_approved : false,
+
         })
         .eq('user_id', user?.id);
 
@@ -197,57 +196,33 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-6">
-      {/* Bannière de statut - Visible UNIQUEMENT si is_seller = true */}
-      {profile.is_seller && (
-        <div className={`p-4 rounded-lg border shadow-sm flex items-start ${profile.seller_approved
-            ? 'bg-green-50 border-green-200 text-green-800'
-            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
-          }`}>
-          <div className="mr-3 mt-0.5">
-            {profile.seller_approved ? (
-              <ShieldCheck className="h-5 w-5 text-green-600" />
-            ) : (
-              <ShieldAlert className="h-5 w-5 text-yellow-600" />
-            )}
+    <div className="max-w-4xl mx-auto p-4 md:p-6 bg-gradient-to-b from-gray-50 to-white min-h-screen">
+      <div className="space-y-6">
+        {/* En-tête avec photo de profil */}
+        <div className="relative rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white overflow-hidden shadow-lg">
+          <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <path fill="white" d="M41.6,-67.9C53.3,-59.4,62,-47.4,69.8,-34.4C77.7,-21.4,84.5,-7.3,83.5,6.1C82.6,19.5,73.9,32.2,63.8,42.9C53.7,53.5,42.2,62,29.8,68.2C17.4,74.4,3.9,78.2,-10.4,77.9C-24.7,77.5,-49.3,73,-63.6,60.7C-77.9,48.3,-81.8,28.1,-81.3,8.8C-80.7,-10.5,-75.7,-29.9,-65.4,-44.5C-55.1,-59.1,-39.5,-68.9,-24.4,-75.5C-9.3,-82.1,5.3,-85.5,18.8,-81.3C32.3,-77.1,64.7,-65.3,82.5,-53.4C100.4,-41.5,103.7,-29.3,107.2,-16.1C110.7,-2.9,114.5,11.3,112.4,24.1C110.4,36.9,102.6,48.2,90.6,53.7C78.6,59.3,62.6,59,48.3,60.9C34,62.7,21.6,66.7,6.8,72.9C-8,79.1,-25.1,87.5,-39.5,85.6C-54,83.6,-65.8,71.3,-74.7,57.6C-83.7,43.9,-89.8,28.9,-89.8,14C-89.8,-1,-83.8,-15.9,-78.4,-31.2C-73,-46.6,-68.3,-62.4,-57.3,-71.6C-46.4,-80.8,-29.2,-83.4,-12.9,-80.9C3.4,-78.4,29.9,-76.4,41.6,-67.9Z" transform="translate(100 100)" />
+            </svg>
           </div>
-          <div>
-            <h3 className="font-semibold">
-              {profile.seller_approved
-                ? '✅ Compte vendeur approuvé'
-                : '⏳ En attente d\'approbation'}
-            </h3>
-            <p className="text-sm mt-1">
-              {profile.seller_approved
-                ? 'Vous pouvez publier des annonces.'
-                : 'Votre demande est en cours de traitement.'}
-            </p>
-          </div>
-        </div>
-      )}
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 border-b">
-          <h1 className="text-2xl font-bold text-gray-800">Mon profil</h1>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* Photo de profil */}
-          <div className="flex flex-col items-center">
-            <div className="relative">
-              {profile.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt="Photo de profil"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"
-                />
-              ) : (
-                <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-4 border-white shadow">
-                  <User className="w-16 h-16 text-gray-400" />
-                </div>
-              )}
-              <label className={`absolute -bottom-2 -right-2 bg-white p-2 rounded-full shadow-md cursor-pointer hover:bg-gray-50 ${isLoading ? 'opacity-50' : ''}`}>
-                <Camera className="w-5 h-5 text-gray-600" />
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="relative group">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white/20 backdrop-blur-sm p-1 shadow-xl">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Photo de profil"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-white/30 flex items-center justify-center">
+                    <User className="w-12 h-12 md:w-16 md:h-16 text-white/70" />
+                  </div>
+                )}
+              </div>
+              <label className="absolute -bottom-2 -right-2 bg-white text-blue-600 p-2 rounded-full shadow-lg cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-xl hover:bg-gray-50">
+                <Camera className="w-5 h-5" />
                 <input
                   type="file"
                   className="hidden"
@@ -257,198 +232,289 @@ export default function Profile() {
                 />
               </label>
             </div>
+
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold">{profile.username || 'Mon Profil'}</h1>
+              <p className="text-blue-100 mt-1">{user?.email}</p>
+
+              {profile.is_seller && (
+                <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/20 backdrop-blur-sm">
+                  {profile.seller_approved ? (
+                    <>
+                      <ShieldCheck className="w-4 h-4 mr-1" />
+                      <span>Vendeur approuvé</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldAlert className="w-4 h-4 mr-1" />
+                      <span>En attente d'approbation</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+        </div>
 
-          {/* Messages d'état */}
-          {error && (
-            <div className="p-3 rounded-lg bg-red-50 text-red-700 flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <span>{error}</span>
-            </div>
-          )}
-          {success && (
-            <div className="p-3 rounded-lg bg-green-50 text-green-700 flex items-center">
-              <Check className="w-5 w-5 mr-2" />
-              <span>{success}</span>
-            </div>
-          )}
+        {/* Messages d'état */}
+        {error && (
+          <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 flex items-center animate-appear shadow-sm">
+            <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Section Informations */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-800">Informations personnelles</h2>
-              <div className="space-y-4">
+        {success && (
+          <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-green-700 flex items-center animate-appear shadow-sm">
+            <Check className="w-5 h-5 mr-3 flex-shrink-0" />
+            <span>{success}</span>
+          </div>
+        )}
+
+        {/* Formulaire principal */}
+        <form onSubmit={handleSubmit}>
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+            {/* En-tête du formulaire */}
+            <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">Informations personnelles</h2>
+              {isLoading && (
+                <div className="flex items-center text-sm text-blue-600">
+                  <Loader className="animate-spin h-4 w-4 mr-2" />
+                  <span>Chargement...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Corps du formulaire */}
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    value={user?.email || ''}
-                    readOnly
-                    className="w-full px-3 py-2 border rounded-md bg-gray-50"
-                  />
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Email</label>
+                  <div className="mt-1 flex rounded-md shadow-sm">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-200 bg-gray-50 text-gray-500">
+                      <MessageSquare className="h-4 w-4" />
+                    </span>
+                    <input
+                      value={user?.email || ''}
+                      readOnly
+                      className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-none rounded-r-md border border-gray-200 bg-gray-50 text-gray-500"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
-                  <input
-                    name="username"
-                    value={profile.username}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">Nom d'utilisateur</label>
+                  <div className="mt-1 flex rounded-md shadow-sm">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-200 bg-gray-50 text-gray-500">
+                      <User className="h-4 w-4" />
+                    </span>
+                    <input
+                      name="username"
+                      value={profile.username}
+                      onChange={handleChange}
+                      required
+                      className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-none rounded-r-md border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Section Statut Vendeur */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-800">Statut Vendeur</h2>
+          {/* Section vendeur */}
+          <div className="mt-6 bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-800">Mode Vendeur</h2>
+            </div>
 
-              {/* Switch - Interactif sauf si vendeur approuvé */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="p-6">
+              {/* Toggle vendeur */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-all duration-200">
                 <div className="flex items-center">
-                  <Store className="h-5 w-5 text-gray-600 mr-2" />
-                  <span className="font-medium">Je souhaite vendre</span>
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Store className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="font-medium text-gray-800">Je souhaite vendre des articles</h3>
+                    <p className="text-sm text-gray-500">Activez cette option pour mettre en vente vos articles</p>
+                  </div>
                 </div>
                 <button
                   type="button"
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${profile.is_seller ? 'bg-blue-600' : 'bg-gray-300'
-                    } ${profile.seller_approved ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${profile.is_seller ? 'bg-blue-600' : 'bg-gray-200'
+                    } ${profile.seller_approved ? 'opacity-60 cursor-not-allowed' : ''}`}
                   onClick={() => toggleSellerMode(!profile.is_seller)}
                   disabled={profile.seller_approved}
                 >
+                  <span className="sr-only">Activer le mode vendeur</span>
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${profile.is_seller ? 'translate-x-6' : 'translate-x-1'
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${profile.is_seller ? 'translate-x-6' : 'translate-x-1'
                       }`}
                   />
                 </button>
               </div>
 
-              {/* Section détaillée pour les vendeurs */}
+              {/* Options de vendeur conditionnelles */}
               {profile.is_seller && (
-                <div className="space-y-4 pl-4 border-l-2 border-blue-100">
+                <div className="mt-6 space-y-6 bg-blue-50 p-5 rounded-xl border border-blue-100 animate-appear">
                   {/* Type de vendeur */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Type de vendeur</label>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Type de vendeur</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <button
                         type="button"
                         onClick={() => changeSellerType('particular')}
                         disabled={profile.seller_approved}
-                        className={`p-3 border rounded-lg text-left ${profile.seller_type === 'particular'
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                          } ${profile.seller_approved ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`group relative p-4 border rounded-xl text-left transition-all duration-200 ${profile.seller_type === 'particular'
+                          ? 'border-blue-500 bg-white shadow-md'
+                          : 'border-gray-200 bg-white/60 hover:bg-white hover:shadow-sm'
+                          } ${profile.seller_approved ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
-                        <div className="flex items-center space-x-2">
-                          <User className="h-5 w-5" />
-                          <span>Particulier</span>
+                        <div className="flex items-center">
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${profile.seller_type === 'particular' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500 group-hover:bg-blue-50 group-hover:text-blue-500'
+                            }`}>
+                            <User className="h-5 w-5" />
+                          </div>
+                          <div className="ml-4">
+                            <h3 className="font-medium text-gray-800">Particulier</h3>
+                            <p className="text-sm text-gray-500">Pour les ventes occasionnelles</p>
+                          </div>
                         </div>
                       </button>
+
                       <button
                         type="button"
                         onClick={() => changeSellerType('professional')}
                         disabled={profile.seller_approved}
-                        className={`p-3 border rounded-lg text-left ${profile.seller_type === 'professional'
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                          } ${profile.seller_approved ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`group relative p-4 border rounded-xl text-left transition-all duration-200 ${profile.seller_type === 'professional'
+                          ? 'border-blue-500 bg-white shadow-md'
+                          : 'border-gray-200 bg-white/60 hover:bg-white hover:shadow-sm'
+                          } ${profile.seller_approved ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
-                        <div className="flex items-center space-x-2">
-                          <Briefcase className="h-5 w-5" />
-                          <span>Professionnel</span>
+                        <div className="flex items-center">
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${profile.seller_type === 'professional' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500 group-hover:bg-blue-50 group-hover:text-blue-500'
+                            }`}>
+                            <Briefcase className="h-5 w-5" />
+                          </div>
+                          <div className="ml-4">
+                            <h3 className="font-medium text-gray-800">Professionnel</h3>
+                            <p className="text-sm text-gray-500">Pour les entreprises</p>
+                          </div>
                         </div>
                       </button>
                     </div>
                   </div>
 
-                  {/* Champs spécifiques aux professionnels */}
+                  {/* Champs pour professionnels */}
                   {profile.seller_type === 'professional' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'entreprise*</label>
+                    <div className="animate-appear">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de l'entreprise*</label>
                       <input
                         name="company_name"
                         value={profile.company_name}
                         onChange={handleChange}
                         required
                         disabled={profile.seller_approved}
-                        className="w-full px-3 py-2 border rounded-md"
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        placeholder="Votre entreprise"
                       />
                     </div>
                   )}
 
                   {/* Coordonnées */}
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone*</label>
-                      <input
-                        name="phone"
-                        value={profile.phone}
-                        onChange={handleChange}
-                        required
-                        disabled={profile.seller_approved}
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Téléphone*</label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                          name="phone"
+                          value={profile.phone}
+                          onChange={handleChange}
+                          required
+                          disabled={profile.seller_approved}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="+33 6 12 34 56 78"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center">
+                        <input
+                          type="checkbox"
+                          id="show_phone"
+                          name="show_phone"
+                          checked={profile.show_phone}
+                          onChange={handleChange}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="show_phone" className="ml-2 text-sm text-gray-600">
+                          Afficher sur mes annonces
+                        </label>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="show_phone"
-                        checked={profile.show_phone}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                      />
-                      <label className="ml-2 text-sm text-gray-700">Afficher sur mes annonces</label>
-                    </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
-                      <input
-                        name="whatsapp"
-                        value={profile.whatsapp}
-                        onChange={handleChange}
-                        disabled={profile.seller_approved}
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="show_whatsapp"
-                        checked={profile.show_whatsapp}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                      />
-                      <label className="ml-2 text-sm text-gray-700">Afficher sur mes annonces</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp</label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <MessageSquare className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                          name="whatsapp"
+                          value={profile.whatsapp}
+                          onChange={handleChange}
+                          disabled={profile.seller_approved}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="+33 6 12 34 56 78"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center">
+                        <input
+                          type="checkbox"
+                          id="show_whatsapp"
+                          name="show_whatsapp"
+                          checked={profile.show_whatsapp}
+                          onChange={handleChange}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="show_whatsapp" className="ml-2 text-sm text-gray-600">
+                          Afficher sur mes annonces
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Boutons */}
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                disabled={isLoading}
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center min-w-24"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader className="animate-spin h-5 w-5" />
-                ) : (
-                  'Enregistrer'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Boutons d'action */}
+          <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 font-medium"
+              disabled={isLoading}
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className={`px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-medium flex items-center justify-center min-w-32 ${isLoading ? 'opacity-80 cursor-not-allowed' : ''
+                }`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader className="animate-spin h-5 w-5 mr-2" />
+                  <span>Traitement...</span>
+                </>
+              ) : (
+                'Enregistrer'
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

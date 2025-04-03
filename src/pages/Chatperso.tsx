@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { Send, ChevronLeft, ChevronDown, ChevronUp, MapPin, Info, Phone, MessageCircle } from "lucide-react";
+import { Send, ChevronLeft, ChevronDown, ChevronUp, MapPin, Info, Phone, MessageCircle, Image } from "lucide-react";
 
 type Message = {
     id: string;
@@ -26,7 +26,7 @@ type ListingDetails = {
     phone?: string;
 };
 
-const Chatperso = () => {
+const ChatPersonal = () => {
     const { userId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
@@ -263,69 +263,74 @@ const Chatperso = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-screen w-full">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+            <div className="flex items-center justify-center h-screen w-full bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-gray-50">
+        <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50">
             {/* Header with listing info */}
-            <div className="flex items-center p-3 border-b border-gray-200 bg-white z-10">
+            <div className="flex items-center p-4 border-b border-gray-200 bg-white shadow-sm z-10">
                 <button
                     onClick={() => navigate(-1)}
-                    className="mr-3 p-1 rounded-full hover:bg-gray-100"
+                    className="mr-3 p-2 rounded-full hover:bg-blue-50 transition-colors duration-200 text-blue-600"
                 >
-                    <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    <ChevronLeft className="h-5 w-5 stroke-2" />
                 </button>
 
                 <div className="flex-1 min-w-0">
                     {listingDetails ? (
                         <>
-                            <h2 className="font-semibold truncate text-gray-800">{listingDetails.title}</h2>
-                            <p className="text-sm text-gray-500 truncate flex items-center">
+                            <h2 className="font-semibold truncate text-gray-800 text-lg">{listingDetails.title}</h2>
+                            <p className="text-sm flex items-center">
                                 <span className="font-medium text-blue-600">{listingDetails.price} MAD</span>
                                 {listingDetails.city && (
                                     <span className="flex items-center ml-2">
                                         <span className="mx-1 text-gray-400">•</span>
+                                        <MapPin className="h-3 w-3 text-gray-500 mr-1" />
                                         {listingDetails.city}
                                     </span>
                                 )}
                             </p>
                         </>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            {receiverProfile?.avatar_url && (
+                        <div className="flex items-center gap-3">
+                            {receiverProfile?.avatar_url ? (
                                 <img
                                     src={receiverProfile.avatar_url}
                                     alt="Avatar"
-                                    className="w-8 h-8 rounded-full border border-gray-200"
+                                    className="w-10 h-10 rounded-full border-2 border-blue-100 shadow-sm"
                                 />
+                            ) : (
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                                    {receiverProfile?.username?.[0]?.toUpperCase() || "?"}
+                                </div>
                             )}
-                            <h2 className="font-semibold text-gray-800">
-                                Conversation avec {receiverProfile?.username || "l'utilisateur"}
+                            <h2 className="font-semibold text-gray-800 text-lg">
+                                {receiverProfile?.username || "l'utilisateur"}
                             </h2>
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center gap-1 ml-2">
+                <div className="flex items-center gap-2 ml-2">
                     {(receiverProfile?.phone || listingDetails?.phone) && (
                         <>
                             <button
                                 onClick={handleWhatsAppClick}
-                                className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                                className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors duration-200 shadow-sm"
                                 title="Contacter via WhatsApp"
                             >
-                                <MessageCircle className="h-5 w-5" />
+                                <MessageCircle className="h-5 w-5 stroke-2" />
                             </button>
                             <button
                                 onClick={handlePhoneClick}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200 shadow-sm"
                                 title="Appeler"
                             >
-                                <Phone className="h-5 w-5" />
+                                <Phone className="h-5 w-5 stroke-2" />
                             </button>
                         </>
                     )}
@@ -333,12 +338,12 @@ const Chatperso = () => {
                     {listingDetails && (
                         <button
                             onClick={() => setShowListingDetails(!showListingDetails)}
-                            className="ml-1 p-2 hover:bg-gray-100 rounded-full"
+                            className="ml-1 p-2 hover:bg-blue-50 rounded-full transition-colors duration-200 shadow-sm text-blue-600"
                         >
                             {showListingDetails ? (
-                                <ChevronUp className="h-5 w-5 text-gray-600" />
+                                <ChevronUp className="h-5 w-5 stroke-2" />
                             ) : (
-                                <ChevronDown className="h-5 w-5 text-gray-600" />
+                                <ChevronDown className="h-5 w-5 stroke-2" />
                             )}
                         </button>
                     )}
@@ -347,27 +352,36 @@ const Chatperso = () => {
 
             {/* Listing details toggle */}
             {showListingDetails && listingDetails && (
-                <div className="p-3 border-b bg-white">
-                    <div className="flex gap-3">
-                        {listingDetails.images?.[0] && (
-                            <img
-                                src={listingDetails.images[0]}
-                                alt={listingDetails.title}
-                                className="w-16 h-16 rounded-lg object-cover border border-gray-200"
-                            />
-                        )}
+                <div className="p-4 border-b border-blue-100 bg-white shadow-sm transition-all duration-300">
+                    <div className="flex gap-4">
+                        <div className="relative">
+                            {listingDetails.images?.[0] ? (
+                                <img
+                                    src={listingDetails.images[0]}
+                                    alt={listingDetails.title}
+                                    className="w-20 h-20 rounded-lg object-cover border border-gray-200 shadow-md"
+                                />
+                            ) : (
+                                <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-md">
+                                    <Image className="w-8 h-8 text-gray-400" />
+                                </div>
+                            )}
+                            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">
+                                {listingDetails.images?.length || 0} photos
+                            </span>
+                        </div>
                         <div className="flex-1 min-w-0">
                             <h3 className="font-semibold truncate text-gray-800">{listingDetails.title}</h3>
-                            <p className="text-blue-600 font-bold">{listingDetails.price} MAD</p>
+                            <p className="text-blue-600 font-bold text-lg">{listingDetails.price} MAD</p>
                             {(listingDetails.city || listingDetails.region) && (
                                 <div className="flex items-center text-sm text-gray-500 mt-1">
-                                    <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                                    <MapPin className="h-4 w-4 mr-1 text-blue-400" />
                                     <span className="truncate">
                                         {listingDetails.city}{listingDetails.region && `, ${listingDetails.region}`}
                                     </span>
                                 </div>
                             )}
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2 bg-gray-50 p-2 rounded-md">
                                 {listingDetails.description}
                             </p>
                         </div>
@@ -378,32 +392,44 @@ const Chatperso = () => {
             {/* Messages area */}
             <div
                 ref={messageContainerRef}
-                className="flex-1 overflow-y-auto pb-4 px-3 scrollbar-thin scrollbar-thumb-gray-300"
+                className="flex-1 overflow-y-auto pb-4 px-4 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-transparent"
             >
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 shadow-md">
+                            <MessageCircle className="h-8 w-8 text-blue-500" />
+                        </div>
                         <p className="text-gray-500 mb-4">
                             {listingDetails
                                 ? "Vous contactez l'annonceur à propos de cette annonce"
                                 : "Commencez la conversation"}
                         </p>
                         {listingDetails && (
-                            <div className="max-w-md w-full bg-white p-4 rounded-lg border border-gray-200">
-                                <h3 className="font-semibold text-gray-800">{listingDetails.title}</h3>
-                                <p className="text-blue-600 font-bold">{listingDetails.price} MAD</p>
-                                <p className="text-sm text-gray-600 line-clamp-2 mt-2">
+                            <div className="max-w-md w-full bg-white p-4 rounded-lg border border-blue-100 shadow-md hover:shadow-lg transition-shadow duration-200">
+                                <div className="flex items-center mb-2">
+                                    <h3 className="font-semibold text-gray-800 flex-1">{listingDetails.title}</h3>
+                                    <p className="text-blue-600 font-bold">{listingDetails.price} MAD</p>
+                                </div>
+                                {listingDetails.images?.[0] && (
+                                    <img
+                                        src={listingDetails.images[0]}
+                                        alt={listingDetails.title}
+                                        className="w-full h-32 object-cover rounded-md mb-2"
+                                    />
+                                )}
+                                <p className="text-sm text-gray-600 line-clamp-2 mt-2 bg-gray-50 p-2 rounded-md">
                                     {listingDetails.description}
                                 </p>
                             </div>
                         )}
                     </div>
                 ) : (
-                    <div className="pt-3 space-y-2">
+                    <div className="pt-4 space-y-3">
                         {messages.map((message) => {
                             if (message.isDivider) {
                                 return (
-                                    <div key={message.id} className="flex justify-center my-3">
-                                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
+                                    <div key={message.id} className="flex justify-center my-4">
+                                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-medium shadow-sm">
                                             <Info className="h-3 w-3 mr-1 flex-shrink-0" />
                                             {message.text}
                                         </div>
@@ -419,9 +445,9 @@ const Chatperso = () => {
                                     className={`flex ${isUserMessage ? "justify-end" : "justify-start"}`}
                                 >
                                     <div
-                                        className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${isUserMessage
-                                                ? "bg-blue-600 text-white rounded-br-sm"
-                                                : "bg-white border border-gray-200 rounded-bl-sm"
+                                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${isUserMessage
+                                                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none"
+                                                : "bg-white border border-blue-100 rounded-bl-none"
                                             }`}
                                     >
                                         <p className="text-sm break-words leading-relaxed">{message.text}</p>
@@ -444,21 +470,24 @@ const Chatperso = () => {
             </div>
 
             {/* Message input */}
-            <div className="bg-white border-t border-gray-200 px-3 py-2">
+            <div className="bg-white border-t border-blue-100 px-4 py-3 shadow-lg">
                 <div className="flex items-center">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                        className="flex-1 px-4 py-3 border border-blue-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-blue-50 shadow-inner text-gray-700 placeholder-gray-400"
                         placeholder="Écrire un message..."
                         disabled={isSending}
                     />
                     <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || isSending}
-                        className={`ml-2 p-2 ${!newMessage.trim() || isSending ? 'bg-gray-300' : 'bg-blue-600'} text-white rounded-full`}
+                        className={`ml-3 p-3 ${!newMessage.trim() || isSending
+                                ? 'bg-gray-300'
+                                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-colors duration-200'
+                            } text-white rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400`}
                     >
                         <Send className="h-5 w-5" />
                     </button>
@@ -468,4 +497,4 @@ const Chatperso = () => {
     );
 };
 
-export default Chatperso;
+export default ChatPersonal;

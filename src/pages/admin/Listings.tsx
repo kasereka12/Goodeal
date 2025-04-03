@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Search, Eye, Check, X, AlertCircle } from 'lucide-react';
+import { Search, Eye, Check, X, AlertCircle, ShoppingBag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { categories } from '../../lib/categories';
+import { toast } from 'react-hot-toast';
 
 interface Listing {
   id: string;
@@ -14,15 +15,38 @@ interface Listing {
   city: string;
   images: string[];
   status: 'pending' | 'active' | 'rejected' | 'sold' | 'archived';
+  is_approved: boolean;
   views: number;
   created_at: string;
+  user_id: string;
   user_data: {
     email: string;
-    user_metadata?: {
+    raw_user_meta_data?: {
       display_name?: string;
     };
   };
 }
+
+const ListingImage = ({ src, alt }: { src: string; alt: string }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError || !src) {
+    return (
+      <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+        <ShoppingBag className="h-5 w-5 text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-10 w-10 rounded-lg object-cover"
+      onError={() => setImageError(true)}
+    />
+  );
+};
 
 export default function Listings() {
   const { user } = useAuth();
@@ -36,43 +60,57 @@ export default function Listings() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Check if user is admin
   useEffect(() => {
     if (user?.user_metadata?.role !== 'admin') {
       navigate('/');
     }
   }, [user, navigate]);
 
-  // Fetch listings
+  const fetchListings = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // First fetch listings with user_id
+      const { data: listingsData, error: listingsError } = await supabase
+        .from('listings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (listingsError) throw listingsError;
+
+      // Then fetch associated users
+      const userIds = listingsData?.map(listing => listing.user_id) || [];
+      const { data: usersData, error: usersError } = await supabase.rpc('get_admin_users');
+
+      if (usersError) throw usersError;
+
+      // Combine the data
+      const combinedData = listingsData?.map(listing => ({
+        ...listing,
+        user_data: usersData?.find(user => user.id === listing.user_id) || {
+          email: '',
+          raw_user_meta_data: {}
+        }
+      })) || [];
+
+      setListings(combinedData);
+    } catch (err: any) {
+      console.error('Error fetching listings:', err);
+      setError(err.message || 'Erreur lors du chargement des annonces');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const { data, error } = await supabase
-          .from('listings_with_users')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setListings(data || []);
-      } catch (err: any) {
-        console.error('Error fetching listings:', err);
-        setError('Erreur lors du chargement des annonces');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (user?.user_metadata?.role === 'admin') {
       fetchListings();
     }
-  }, [user]);
+  }, [user, selectedStatus]);
 
-  // Filter listings
   const filteredListings = listings.filter(listing => {
-    const matchesSearch =
+    const matchesSearch = searchQuery === '' ||
       listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       listing.description.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -82,24 +120,31 @@ export default function Listings() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Update listing status
   const updateStatus = async (id: string, status: Listing['status']) => {
     try {
       const { error } = await supabase
         .from('listings')
-        .update({ status })
+        .update({
+          status,
+          is_approved: status === 'active'
+        })
         .eq('id', id);
 
       if (error) throw error;
 
       setListings(listings.map(listing =>
-        listing.id === id ? { ...listing, status } : listing
+        listing.id === id ? {
+          ...listing,
+          status,
+          is_approved: status === 'active'
+        } : listing
       ));
 
       setShowModal(false);
+      toast.success(`Annonce ${status === 'active' ? 'approuvée' : 'rejetée'}`);
     } catch (err: any) {
       console.error('Error updating listing status:', err);
-      setError('Erreur lors de la mise à jour du statut');
+      toast.error('Erreur lors de la mise à jour du statut');
     }
   };
 
@@ -123,7 +168,6 @@ export default function Listings() {
         </div>
       )}
 
-      {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
@@ -161,7 +205,6 @@ export default function Listings() {
         </div>
       </div>
 
-      {/* Listings Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -192,22 +235,22 @@ export default function Listings() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredListings.map((listing) => (
-                <tr key={listing.id}>
+                <tr
+                  key={listing.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={(e) => {
+                    // Empêche la navigation si on clique sur les boutons d'action
+                    if (!(e.target as HTMLElement).closest('button')) {
+                      navigate(`/admin/listings/${listing.id}`);
+                    }
+                  }}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0">
-                        {listing.images?.length > 0 ? (
-                          <img
-                            src={listing.images[0]}
-                            alt={listing.title}
-                            className="h-10 w-10 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <ShoppingBag className="h-5 w-5 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
+                      <ListingImage
+                        src={listing.images?.[0]}
+                        alt={listing.title}
+                      />
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 line-clamp-1">
                           {listing.title}
@@ -220,7 +263,7 @@ export default function Listings() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 line-clamp-1">
-                      {listing.user_data?.user_metadata?.display_name ||
+                      {listing.user_data?.raw_user_meta_data?.display_name ||
                         listing.user_data?.email?.split('@')[0] || 'Anonyme'}
                     </div>
                     <div className="text-sm text-gray-500 line-clamp-1">
@@ -295,7 +338,6 @@ export default function Listings() {
         )}
       </div>
 
-      {/* Rejection Modal */}
       {showModal && selectedListing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
