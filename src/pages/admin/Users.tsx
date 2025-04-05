@@ -137,27 +137,24 @@ const UserRow = ({
         {user.email}
       </td>
       <td className="px-3 py-4 whitespace-nowrap">
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          user.role === 'admin' ? 
-            (isSuperAdmin ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') 
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ?
+            (isSuperAdmin ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800')
             : 'bg-gray-100 text-gray-800'
-        }`}>
+          }`}>
           {isSuperAdmin ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'User'}
         </span>
       </td>
       <td className="px-3 py-4 whitespace-nowrap">
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           {user.status === 'active' ? 'Active' : 'Banned'}
         </span>
       </td>
       <td className="px-3 py-4 whitespace-nowrap hidden lg:table-cell">
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          user.is_seller
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_seller
             ? (user.seller_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')
             : 'bg-gray-100 text-gray-800'
-        }`}>
+          }`}>
           {user.is_seller
             ? (user.seller_approved ? 'Approved' : 'Pending')
             : 'None'}
@@ -191,11 +188,10 @@ const UserRow = ({
             )}
             <button
               onClick={() => updateUserStatus('ban', user.user_id, user.status !== 'banned')}
-              className={`p-1 rounded ${
-                user.status === 'banned'
+              className={`p-1 rounded ${user.status === 'banned'
                   ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
                   : 'text-red-600 hover:text-red-900 hover:bg-red-50'
-              }`}
+                }`}
               title={user.status === 'banned' ? 'Unban' : 'Ban'}
             >
               <Ban className="h-4 w-4" />
@@ -203,11 +199,10 @@ const UserRow = ({
             {user.is_seller && (
               <button
                 onClick={() => updateUserStatus('seller', user.user_id, !user.seller_approved)}
-                className={`p-1 rounded ${
-                  user.seller_approved
+                className={`p-1 rounded ${user.seller_approved
                     ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
                     : 'text-green-600 hover:text-green-900 hover:bg-green-50'
-                }`}
+                  }`}
                 title={user.seller_approved ? 'Revoke approval' : 'Approve seller'}
               >
                 {user.seller_approved ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}

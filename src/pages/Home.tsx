@@ -133,7 +133,7 @@ const Home = () => {
     } else if (filters.city) {
       navigate(`/city/${filters.city}`);
     } else {
-      navigate('/search');
+      navigate('/category/');
     }
   };
 
@@ -348,7 +348,7 @@ const Home = () => {
             {POPULAR_CITIES.map((city) => (
               <Link
                 key={city.id}
-                to={`/city/${city.id}`}
+                to={`/ville/${city.id}`}
                 className="group relative h-64 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
               >
                 <img

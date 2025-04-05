@@ -28,6 +28,7 @@ import FavoritesPage from './pages/Favoris';
 import ReportPage from './pages/Report';
 import ProfilesUsers from './pages/admin/ProfilesUsers';
 import Listingdetails from './pages/admin/Listingdetails';
+import VilleListing from './pages/VilleListing';
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -96,6 +97,7 @@ function App() {
                       <Route path="/create-listing" element={<CreateListing />} />
                       <Route path="/listings/:id" element={<ListingDetails />} />
                       <Route path="/category/:category" element={<CategoryListings />} />
+                      <Route path="/ville/:ville" element={<VilleListing />} />
                       <Route path="/profile" element={<Profile />} />
 
                       <Route path="/favorites" element={<FavoritesPage />} />

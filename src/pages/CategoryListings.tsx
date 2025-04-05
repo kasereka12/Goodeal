@@ -42,13 +42,16 @@ export default function CategoryListings() {
         setIsLoading(true);
         setError(null);
 
-        // Build query
+
         let query = supabase
           .from('listings')
           .select('*')
-          .eq('status', 'active')
-          .eq('category', category);
+          .eq('status', 'active');
 
+        // Vérifier si une catégorie est définie, sinon récupérer toutes les annonces actives
+        if (category !== null) {
+          query = query.eq('category', category);
+        }
         // Apply transaction type filter if set
         if (transactionType) {
           query = query.eq('transaction_type', transactionType);
@@ -259,8 +262,8 @@ export default function CategoryListings() {
                     <button
                       onClick={() => handleSortChange('date')}
                       className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${sortBy === 'date'
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
                       <Clock className="h-3.5 w-3.5" />
@@ -274,8 +277,8 @@ export default function CategoryListings() {
                     <button
                       onClick={() => handleSortChange('price')}
                       className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${sortBy === 'price'
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
                       <CreditCard className="h-3.5 w-3.5" />
@@ -337,8 +340,8 @@ export default function CategoryListings() {
                         {/* Badge pour le type de transaction */}
                         {listing.transaction_type && (
                           <div className={`absolute top-3 left-3 px-3 py-1 rounded-lg text-xs font-medium shadow-sm ${listing.transaction_type === 'location'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-green-500 text-white'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-green-500 text-white'
                             }`}>
                             {listing.transaction_type === 'location' ? 'Location' : 'Vente'}
                           </div>

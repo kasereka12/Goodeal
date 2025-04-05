@@ -168,6 +168,14 @@ export const translations = {
       cours: 'Cours',
       mobilier: 'Mobilier'
     },
+    safety: {
+      title: "Conseils de sécurité",
+      tip1: "Ne payez jamais d'avance sans voir l'article",
+      tip2: "Rencontrez le vendeur dans un lieu public",
+      tip3: "Vérifiez le produit avant de l'acheter",
+      tip4: "Méfiez-vous des prix trop bas",
+      learnMore: "En savoir plus sur la sécurité"
+    },
     footer: {
       description: "La première plateforme d'annonces au Maroc. Trouvez tout ce dont vous avez besoin ou vendez facilement ce que vous n'utilisez plus.",
       quickLinks: "Liens rapides",
@@ -281,6 +289,14 @@ export const translations = {
         tip4: "Méfiez-vous des prix trop bas",
         learnMore: "En savoir plus sur la sécurité"
       }
+    },
+    safety: {
+      title: "Conseils de sécurité",
+      tip1: "Ne payez jamais d'avance sans voir l'article",
+      tip2: "Rencontrez le vendeur dans un lieu public",
+      tip3: "Vérifiez le produit avant de l'acheter",
+      tip4: "Méfiez-vous des prix trop bas",
+      learnMore: "En savoir plus sur la sécurité"
     },
 
     seller: {

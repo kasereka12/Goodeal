@@ -1,20 +1,21 @@
+import { all } from 'axios';
 import { Home, Car, Briefcase, Paintbrush } from 'lucide-react';
 
 // Fonction utilitaire pour obtenir les modèles d'une marque
 export function getModelsForBrand(category: 'vehicules', brandName: string) {
   // Normaliser le nom de la marque pour la comparaison
   const normalizedBrandName = brandName.toLowerCase();
-  
+
   // Trouver la marque correspondante
   const brandKey = Object.keys(brands[category]).find(
     key => key.toLowerCase() === normalizedBrandName
   );
-  
+
   if (!brandKey) {
     console.warn(`No models found for brand: ${brandName}`);
     return [];
   }
-  
+
   // Retourner les modèles formatés
   return brands[category][brandKey as keyof typeof brands[typeof category]].map(model => ({
     value: model.toLowerCase(),
