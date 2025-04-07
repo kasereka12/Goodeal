@@ -29,6 +29,14 @@ import ReportPage from './pages/Report';
 import ProfilesUsers from './pages/admin/ProfilesUsers';
 import Listingdetails from './pages/admin/Listingdetails';
 import VilleListing from './pages/VilleListing';
+import SellerDashboard from './pages/seller/Dashboard';
+import SellerListings from './pages/seller/Listings';
+import SellerMessages from './pages/seller/Messages';
+import SellerAnalytics from './pages/seller/Analytics';
+import SellerSales from './pages/seller/Sales';
+import SellerSettings from './pages/seller/Settings';
+import SellerHelp from './pages/seller/Help';
+import SellerDashboardLayout from './layouts/SellerDashboardLayout';
 
 // Component to handle scrolling to top on page navigation
 function ScrollToTop() {
@@ -67,6 +75,16 @@ function App() {
               <Route path="profils/:id" element={<ProfilesUsers />} />
               <Route path="listings/:id" element={<Listingdetails />} />
 
+            </Route>
+            {/* Seller Dashboard routes */}
+            <Route path="/seller" element={<SellerDashboardLayout />}>
+              <Route index element={<SellerDashboard />} />
+              <Route path="listings" element={<SellerListings />} />
+              <Route path="messages" element={<SellerMessages />} />
+              <Route path="analytics" element={<SellerAnalytics />} />
+              <Route path="sales" element={<SellerSales />} />
+              <Route path="settings" element={<SellerSettings />} />
+              <Route path="help" element={<SellerHelp />} />
             </Route>
 
             {/* Public routes */}

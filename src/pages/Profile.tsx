@@ -1,24 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Camera, Phone, MessageSquare, Check, AlertCircle, Store, Briefcase, ShieldCheck, ShieldAlert, Loader } from 'lucide-react';
+import {
+  User, Camera, Phone, MessageSquare,
+  Check, AlertCircle, Store, Briefcase,
+  ShieldCheck, ShieldAlert, Loader
+} from 'lucide-react';
 
-type ProfileData = {
+type SellerType = 'particular' | 'professional';
+
+interface ProfileState {
   username: string;
   phone: string;
   whatsapp: string;
   is_seller: boolean;
-  seller_type: 'particular' | 'professional';
+  seller_type: SellerType;
   company_name: string;
   show_phone: boolean;
   show_whatsapp: boolean;
   seller_approved: boolean;
   avatar_url: string;
-};
+}
 
-export default function Profile() {
+interface UIState {
+  isLoading: boolean;
+  error: string | null;
+  success: string | null;
+}
+
+const AVATAR_BUCKET = 'avatars';
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
+
+const Profile: React.FC = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<ProfileData>({
+  const [profile, setProfile] = useState<ProfileState>({
     username: '',
     phone: '',
     whatsapp: '',
@@ -30,16 +46,19 @@ export default function Profile() {
     seller_approved: false,
     avatar_url: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [ui, setUi] = useState<UIState>({
+    isLoading: false,
+    error: null,
+    success: null
+  });
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadProfileData = async () => {
       if (!user?.id) return;
 
+      setUi(prev => ({ ...prev, isLoading: true }));
+
       try {
-        setIsLoading(true);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -62,79 +81,95 @@ export default function Profile() {
             avatar_url: data.avatar_url || ''
           });
         }
-      } catch (err) {
-        console.error('Erreur de chargement:', err);
-        setError("Échec du chargement du profil");
+      } catch (error) {
+        handleError(error, "Échec du chargement du profil");
       } finally {
-        setIsLoading(false);
+        setUi(prev => ({ ...prev, isLoading: false }));
       }
     };
 
-    loadProfile();
+    loadProfileData();
   }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleError = (error: unknown, defaultMessage: string) => {
+    console.error('Profile Error:', error);
+    const message = error instanceof Error ? error.message : defaultMessage;
+    setUi(prev => ({ ...prev, error: message, success: null }));
+  };
+
+  const handleSuccess = (message: string) => {
+    setUi(prev => ({ ...prev, success: message, error: null }));
+  };
+
+  const validateSellerData = (): boolean => {
+    if (!profile.is_seller) return true;
+
+    if (!profile.phone) {
+      handleError("Un numéro de téléphone est requis pour les vendeurs", "");
+      return false;
+    }
+
+    if (profile.seller_type === 'professional' && !profile.company_name) {
+      handleError("Le nom de l'entreprise est obligatoire pour les professionnels", "");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+    if (!validateSellerData()) return;
+
+    setUi(prev => ({ ...prev, isLoading: true, error: null, success: null }));
 
     try {
-      if (profile.is_seller) {
-        if (!profile.phone) throw new Error("Un numéro de téléphone est requis pour les vendeurs");
-        if (profile.seller_type === 'professional' && !profile.company_name) {
-          throw new Error("Le nom de l'entreprise est obligatoire pour les professionnels");
-        }
-      }
-
       const { error } = await supabase
         .from('profiles')
         .update({
           ...profile,
           updated_at: new Date(),
-          seller_approved: profile.is_seller ? profile.seller_approved : false,
-
+          seller_approved: profile.is_seller ? profile.seller_approved : false
         })
         .eq('user_id', user?.id);
 
       if (error) throw error;
 
-      setSuccess(
+      handleSuccess(
         profile.is_seller && !profile.seller_approved
           ? "Demande de vendeur soumise. En attente d'approbation."
           : "Profil mis à jour avec succès"
       );
-    } catch (err) {
-      console.error('Erreur:', err);
-      setError(err.message || "Erreur de mise à jour");
+    } catch (error) {
+      handleError(error, "Erreur lors de la mise à jour du profil");
     } finally {
-      setIsLoading(false);
+      setUi(prev => ({ ...prev, isLoading: false }));
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user?.id) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("La taille maximale est de 5MB");
+    // Validation du fichier
+    if (file.size > MAX_FILE_SIZE) {
       return;
     }
-    if (!file.type.match(/image\/(jpeg|png|gif)/)) {
-      setError("Formats acceptés: JPEG, PNG, GIF");
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+
+
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName; // Pas besoin du prefixe 'avatars/' ici
 
+      // 1. Upload avec le bon scope
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from(AVATAR_BUCKET)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
@@ -143,28 +178,28 @@ export default function Profile() {
 
       if (uploadError) throw uploadError;
 
+      // 2. Récupération de l'URL
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from(AVATAR_BUCKET)
         .getPublicUrl(filePath);
 
+      // 3. Mise à jour du profil
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 
       setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
-      setSuccess("Photo de profil mise à jour");
+
     } catch (err) {
-      console.error('Erreur:', err);
-      setError(err.message || "Erreur d'upload");
+      console.error('Erreur complète:', err);
     } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setProfile(prev => ({
       ...prev,
@@ -172,33 +207,30 @@ export default function Profile() {
     }));
   };
 
-  const toggleSellerMode = (isSeller: boolean) => {
+  const toggleSellerStatus = (enable: boolean) => {
     if (profile.is_seller && profile.seller_approved) {
-      setError("Vous ne pouvez pas désactiver le mode vendeur après approbation");
+      handleError("Impossible de désactiver le mode vendeur après approbation", "");
       return;
     }
     setProfile(prev => ({
       ...prev,
-      is_seller: isSeller,
-      seller_approved: isSeller ? prev.seller_approved : false
+      is_seller: enable,
+      seller_approved: enable ? prev.seller_approved : false
     }));
   };
 
-  const changeSellerType = (type: 'particular' | 'professional') => {
+  const updateSellerType = (type: SellerType) => {
     if (profile.seller_approved) {
-      setError("Vous ne pouvez pas modifier le type de vendeur après approbation");
+      handleError("Impossible de modifier le type de vendeur après approbation", "");
       return;
     }
-    setProfile(prev => ({
-      ...prev,
-      seller_type: type
-    }));
+    setProfile(prev => ({ ...prev, seller_type: type }));
   };
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6 bg-gradient-to-b from-gray-50 to-white min-h-screen">
       <div className="space-y-6">
-        {/* En-tête avec photo de profil */}
+        {/* Profile Header */}
         <div className="relative rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white overflow-hidden shadow-lg">
           <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
             <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -211,15 +243,26 @@ export default function Profile() {
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white/20 backdrop-blur-sm p-1 shadow-xl">
                 {profile.avatar_url ? (
                   <img
-                    src={profile.avatar_url}
+                    src={`${profile.avatar_url}?${new Date().getTime()}`} // Cache busting
                     alt="Photo de profil"
                     className="w-full h-full rounded-full object-cover"
+                    onError={(e) => {
+                      // Fallback si l'image ne charge pas
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '';
+                      e.currentTarget.parentElement!.querySelector('.avatar-fallback')?.classList.remove('hidden');
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full rounded-full bg-white/30 flex items-center justify-center">
                     <User className="w-12 h-12 md:w-16 md:h-16 text-white/70" />
                   </div>
                 )}
+
+                {/* Fallback caché par défaut */}
+                <div className="avatar-fallback hidden w-full h-full rounded-full bg-white/30 flex items-center justify-center">
+                  <User className="w-12 h-12 md:w-16 md:h-16 text-white/70" />
+                </div>
               </div>
               <label className="absolute -bottom-2 -right-2 bg-white text-blue-600 p-2 rounded-full shadow-lg cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-xl hover:bg-gray-50">
                 <Camera className="w-5 h-5" />
@@ -227,8 +270,8 @@ export default function Profile() {
                   type="file"
                   className="hidden"
                   accept="image/jpeg,image/png,image/gif"
-                  onChange={handlePhotoUpload}
-                  disabled={isLoading}
+                  onChange={handleAvatarUpload}
+                  disabled={ui.isLoading}
                 />
               </label>
             </div>
@@ -256,28 +299,27 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Messages d'état */}
-        {error && (
+        {/* Status Messages */}
+        {ui.error && (
           <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 flex items-center animate-appear shadow-sm">
             <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>{error}</span>
+            <span>{ui.error}</span>
           </div>
         )}
 
-        {success && (
+        {ui.success && (
           <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-green-700 flex items-center animate-appear shadow-sm">
             <Check className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>{success}</span>
+            <span>{ui.success}</span>
           </div>
         )}
 
-        {/* Formulaire principal */}
-        <form onSubmit={handleSubmit}>
+        {/* Main Form */}
+        <form onSubmit={handleProfileSubmit}>
           <div className="bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
-            {/* En-tête du formulaire */}
             <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-800">Informations personnelles</h2>
-              {isLoading && (
+              {ui.isLoading && (
                 <div className="flex items-center text-sm text-blue-600">
                   <Loader className="animate-spin h-4 w-4 mr-2" />
                   <span>Chargement...</span>
@@ -285,7 +327,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Corps du formulaire */}
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -310,7 +351,7 @@ export default function Profile() {
                     <input
                       name="username"
                       value={profile.username}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                       required
                       className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-none rounded-r-md border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     />
@@ -320,14 +361,13 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Section vendeur */}
+          {/* Seller Section */}
           <div className="mt-6 bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
             <div className="border-b border-gray-100 px-6 py-4">
               <h2 className="text-xl font-semibold text-gray-800">Mode Vendeur</h2>
             </div>
 
             <div className="p-6">
-              {/* Toggle vendeur */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-all duration-200">
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -342,7 +382,7 @@ export default function Profile() {
                   type="button"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${profile.is_seller ? 'bg-blue-600' : 'bg-gray-200'
                     } ${profile.seller_approved ? 'opacity-60 cursor-not-allowed' : ''}`}
-                  onClick={() => toggleSellerMode(!profile.is_seller)}
+                  onClick={() => toggleSellerStatus(!profile.is_seller)}
                   disabled={profile.seller_approved}
                 >
                   <span className="sr-only">Activer le mode vendeur</span>
@@ -353,16 +393,14 @@ export default function Profile() {
                 </button>
               </div>
 
-              {/* Options de vendeur conditionnelles */}
               {profile.is_seller && (
                 <div className="mt-6 space-y-6 bg-blue-50 p-5 rounded-xl border border-blue-100 animate-appear">
-                  {/* Type de vendeur */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">Type de vendeur</label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <button
                         type="button"
-                        onClick={() => changeSellerType('particular')}
+                        onClick={() => updateSellerType('particular')}
                         disabled={profile.seller_approved}
                         className={`group relative p-4 border rounded-xl text-left transition-all duration-200 ${profile.seller_type === 'particular'
                           ? 'border-blue-500 bg-white shadow-md'
@@ -383,7 +421,7 @@ export default function Profile() {
 
                       <button
                         type="button"
-                        onClick={() => changeSellerType('professional')}
+                        onClick={() => updateSellerType('professional')}
                         disabled={profile.seller_approved}
                         className={`group relative p-4 border rounded-xl text-left transition-all duration-200 ${profile.seller_type === 'professional'
                           ? 'border-blue-500 bg-white shadow-md'
@@ -404,14 +442,13 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  {/* Champs pour professionnels */}
                   {profile.seller_type === 'professional' && (
                     <div className="animate-appear">
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de l'entreprise*</label>
                       <input
                         name="company_name"
                         value={profile.company_name}
-                        onChange={handleChange}
+                        onChange={handleInputChange}
                         required
                         disabled={profile.seller_approved}
                         className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
@@ -420,7 +457,6 @@ export default function Profile() {
                     </div>
                   )}
 
-                  {/* Coordonnées */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Téléphone*</label>
@@ -431,7 +467,7 @@ export default function Profile() {
                         <input
                           name="phone"
                           value={profile.phone}
-                          onChange={handleChange}
+                          onChange={handleInputChange}
                           required
                           disabled={profile.seller_approved}
                           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -444,7 +480,7 @@ export default function Profile() {
                           id="show_phone"
                           name="show_phone"
                           checked={profile.show_phone}
-                          onChange={handleChange}
+                          onChange={handleInputChange}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                         <label htmlFor="show_phone" className="ml-2 text-sm text-gray-600">
@@ -462,7 +498,7 @@ export default function Profile() {
                         <input
                           name="whatsapp"
                           value={profile.whatsapp}
-                          onChange={handleChange}
+                          onChange={handleInputChange}
                           disabled={profile.seller_approved}
                           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="+33 6 12 34 56 78"
@@ -474,7 +510,7 @@ export default function Profile() {
                           id="show_whatsapp"
                           name="show_whatsapp"
                           checked={profile.show_whatsapp}
-                          onChange={handleChange}
+                          onChange={handleInputChange}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                         <label htmlFor="show_whatsapp" className="ml-2 text-sm text-gray-600">
@@ -488,23 +524,22 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Boutons d'action */}
           <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3">
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 font-medium"
-              disabled={isLoading}
+              disabled={ui.isLoading}
             >
               Annuler
             </button>
             <button
               type="submit"
-              className={`px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-medium flex items-center justify-center min-w-32 ${isLoading ? 'opacity-80 cursor-not-allowed' : ''
+              className={`px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-medium flex items-center justify-center min-w-32 ${ui.isLoading ? 'opacity-80 cursor-not-allowed' : ''
                 }`}
-              disabled={isLoading}
+              disabled={ui.isLoading}
             >
-              {isLoading ? (
+              {ui.isLoading ? (
                 <>
                   <Loader className="animate-spin h-5 w-5 mr-2" />
                   <span>Traitement...</span>
@@ -518,4 +553,6 @@ export default function Profile() {
       </div>
     </div>
   );
-}
+};
+
+export default Profile;

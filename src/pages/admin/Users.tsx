@@ -138,8 +138,8 @@ const UserRow = ({
       </td>
       <td className="px-3 py-4 whitespace-nowrap">
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ?
-            (isSuperAdmin ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800')
-            : 'bg-gray-100 text-gray-800'
+          (isSuperAdmin ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800')
+          : 'bg-gray-100 text-gray-800'
           }`}>
           {isSuperAdmin ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'User'}
         </span>
@@ -152,8 +152,8 @@ const UserRow = ({
       </td>
       <td className="px-3 py-4 whitespace-nowrap hidden lg:table-cell">
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_seller
-            ? (user.seller_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')
-            : 'bg-gray-100 text-gray-800'
+          ? (user.seller_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')
+          : 'bg-gray-100 text-gray-800'
           }`}>
           {user.is_seller
             ? (user.seller_approved ? 'Approved' : 'Pending')
@@ -189,8 +189,8 @@ const UserRow = ({
             <button
               onClick={() => updateUserStatus('ban', user.user_id, user.status !== 'banned')}
               className={`p-1 rounded ${user.status === 'banned'
-                  ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
-                  : 'text-red-600 hover:text-red-900 hover:bg-red-50'
+                ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                : 'text-red-600 hover:text-red-900 hover:bg-red-50'
                 }`}
               title={user.status === 'banned' ? 'Unban' : 'Ban'}
             >
@@ -200,8 +200,8 @@ const UserRow = ({
               <button
                 onClick={() => updateUserStatus('seller', user.user_id, !user.seller_approved)}
                 className={`p-1 rounded ${user.seller_approved
-                    ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
-                    : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                  ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
+                  : 'text-green-600 hover:text-green-900 hover:bg-green-50'
                   }`}
                 title={user.seller_approved ? 'Revoke approval' : 'Approve seller'}
               >
@@ -341,9 +341,13 @@ const UserManagement = () => {
 
       const { data, error } = await supabase.rpc('get_admin_users');
 
+      const filteredData = data.filter((user: any) => user.user_id !== currentUser.id);
+      console.log('Filtered Data:', filteredData);
+
+
       if (error) throw error;
 
-      const formattedUsers = data.map((user: any) => ({
+      const formattedUsers = filteredData.map((user: any) => ({
         ...user,
         created_at: new Date(user.created_at),
         banned_until: user.banned_until ? new Date(user.banned_until) : undefined,
@@ -353,7 +357,6 @@ const UserManagement = () => {
 
       setUsers(formattedUsers);
     } catch (err) {
-      console.error('Error fetching users:', err);
       setError('Failed to load users. Please try again.');
       toast.error('Failed to load users');
     } finally {

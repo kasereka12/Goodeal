@@ -21,6 +21,7 @@ import { signOut } from '../lib/auth';
 import Logo from './Logo';
 import LanguageSwitch from './LanguageSwitch';
 import { supabase } from '../lib/supabase';
+import { set } from 'react-hook-form';
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [profile, setProfile] = useState(null);
 
   const handleSignOut = async () => {
     try {
@@ -44,6 +46,22 @@ export default function Navbar() {
     setIsMenuOpen(false);
     setIsProfileOpen(false);
   };
+
+  useEffect(() => {
+    const handleProfile = async () => {
+      const data = await supabase
+        .from('profiles')
+        .select('is_seller')
+        .eq('user_id', user.id)
+        .single();
+      setProfile(data.data.is_seller);
+    };
+
+    if (user?.id) {
+      handleProfile();
+    }
+  }, [user]);
+
 
   // Handle scroll effect
   useEffect(() => {
@@ -194,6 +212,8 @@ export default function Navbar() {
                     )}
                   </button>
 
+
+
                   {/* Profile dropdown */}
                   {isProfileOpen && (
                     <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black/5 focus:outline-none overflow-hidden">
@@ -204,6 +224,15 @@ export default function Navbar() {
                         </div>
                       </div>
                       <div className="py-1">
+                        {profile && (
+                          <Link
+                            to="/seller"
+                            className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                            onClick={closeAllMenus}
+                          >
+                            Voir mon dashboard
+                          </Link>
+                        )}
                         <Link
                           to="/profile"
                           className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
@@ -212,7 +241,7 @@ export default function Navbar() {
                           <User className="mr-3 h-5 w-5 text-gray-400" />
                           {t('nav.profile')}
                         </Link>
-                       
+
                         <Link
                           to="/settings"
                           className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
