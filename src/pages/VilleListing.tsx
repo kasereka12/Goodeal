@@ -32,7 +32,7 @@ export default function VilleListings() {
     useEffect(() => {
         const fetchListings = async () => {
             if (!ville) return;
-
+            
             try {
                 setIsLoading(true);
                 setError(null);
